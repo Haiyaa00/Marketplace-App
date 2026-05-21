@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Marketplace" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Đặt màu Ocean Blue làm màu chủ đạo cho toàn app -->
+        <item name="colorPrimary">@color/ocean_blue_primary</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/ocean_blue_light</item>
+
+        <!-- Các màu phụ trợ -->
+        <item name="colorSecondary">@color/ocean_blue_dark</item>
+        <item name="colorError">#B00020</item>
+    </style>
+</resources>

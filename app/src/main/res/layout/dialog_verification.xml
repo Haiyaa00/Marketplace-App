@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="0dp"
+    android:backgroundTint="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <!-- Icon Trạng thái (Mặc định là Email) -->
+        <ImageView
+            android:id="@+id/ivDialogIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@android:drawable/ic_dialog_email"
+            app:tint="@color/ocean_blue_primary" />
+
+        <!-- Tiêu đề Dialog -->
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Xác thực Email"
+            android:textColor="@color/ocean_blue_dark"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <!-- Nội dung thông báo -->
+        <TextView
+            android:id="@+id/tvDialogMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="Vui lòng kiểm tra hộp thư đến và click link xác thực. Màn hình này sẽ tự động cập nhật..."
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
+
+        <!-- Vòng xoay Loading -->
+        <ProgressBar
+            android:id="@+id/pbDialogLoading"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="24dp"
+            android:indeterminateTint="@color/ocean_blue_primary" />
+
+        <!-- Khu vực chứa các nút bấm -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical">
+
+            <!-- Nút Đến trang đăng nhập (Ban đầu ẩn đi) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDialogLogin"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Đến trang Đăng nhập"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:backgroundTint="@color/ocean_blue_primary"
+                app:cornerRadius="12dp" />
+
+            <!-- Nút Hủy / Đóng -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDialogCancel"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Hủy đăng ký"
+                android:textColor="@color/text_secondary"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="ocean_blue_primary">#0077C2</color>       <!-- Xanh biển tươi -->
+    <color name="ocean_blue_dark">#004C8C</color>          <!-- Xanh biển đậm -->
+    <color name="ocean_blue_light">#59A5F5</color>         <!-- Xanh biển nhạt -->
+
+    <!-- Màu phụ trợ -->
+    <color name="text_primary">#2C3E50</color>             <!-- Xám than đen (Đọc tốt hơn màu đen tuyền) -->
+    <color name="text_secondary">#7F8C8D</color>           <!-- Xám nhạt -->
+    <color name="bg_light_blue">#F0F4F8</color>
+</resources>
