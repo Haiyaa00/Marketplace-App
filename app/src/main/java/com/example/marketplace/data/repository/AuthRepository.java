@@ -129,6 +129,49 @@ public class AuthRepository {
         return isVerified;
     }
 
+    public LiveData<Resource<Void>> updateAvatar(UserEntity currentUser, String newAvatarUrl) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        User updatedUser = new User(currentUser.uid, currentUser.name, currentUser.email, currentUser.phone, newAvatarUrl);
+
+        firebaseManager.saveUserInfo(updatedUser).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                executor.execute(() -> {
+                    userDao.insertUser(DataMapper.mapToUserEntity(updatedUser));
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Lỗi cập nhật ảnh đại diện!", null));
+            }
+        });
+        return result;
+    }
+
+    public LiveData<Resource<Void>> updateProfile(UserEntity currentUser, String newName, String newPhone) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        // Tạo đối tượng User mới để đồng bộ
+        User updatedUser = new User(currentUser.uid, newName, currentUser.email, newPhone, currentUser.avatarUrl);
+
+        // 1. Lưu thông tin mới lên Firestore
+        firebaseManager.saveUserInfo(updatedUser).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                // 2. Nếu thành công -> Cập nhật trực tiếp xuống SQLite cục bộ bằng Executor
+                executor.execute(() -> {
+                    userDao.insertUser(DataMapper.mapToUserEntity(updatedUser));
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Không thể cập nhật thông tin!", null));
+            }
+        });
+        return result;
+    }
+
     // Đăng xuất: Clear Firebase Session và Clear Local Room DB
     public void logout() {
         firebaseManager.logout();

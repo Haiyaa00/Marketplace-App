@@ -15,7 +15,7 @@ public class CloudinaryManager {
     private static volatile CloudinaryManager INSTANCE;
 
     // Thay bằng tên Preset bạn đã tạo ở Bước 1
-    private static final String UPLOAD_PRESET = "student_preset";
+    private static final String UPLOAD_PRESET = "student_presets";
 
     private CloudinaryManager() {}
 

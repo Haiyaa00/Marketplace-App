@@ -30,4 +30,7 @@ public interface ProductDao {
 
     @Query("DELETE FROM products")
     void clearAllProducts();
+
+    @Query("DELETE FROM products WHERE id = :productId")
+    void deleteProductById(String productId);
 }

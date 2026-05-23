@@ -2,40 +2,74 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_light_blue"
     android:orientation="vertical">
 
+    <!-- Header xanh đại dương chứa thông tin cá nhân (Đã khôi phục hoàn chỉnh) -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="160dp"
         android:background="@color/ocean_blue_primary"
         android:padding="20dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/img_avatar"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_centerVertical="true"
-            android:scaleType="centerCrop"
-            android:src="@tools:sample/avatars"
-            app:shapeAppearanceOverlay="@style/CircleImage" />
+        <!-- FrameLayout bọc Avatar chính và nút Camera nhỏ -->
+        <FrameLayout
+            android:id="@+id/avatar_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true">
 
+            <!-- Click vào ảnh đại diện chính để Xem To -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/img_avatar"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerCrop"
+                android:clickable="true"
+                android:focusable="true"
+                tools:src="@tools:sample/avatars"
+                app:shapeAppearanceOverlay="@style/CircleImage" />
+
+            <!-- Click vào nút Camera nhỏ này mới để Đổi Ảnh -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btn_change_avatar"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="bottom|end"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="6dp"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="1.5dp"
+                app:cardBackgroundColor="@color/ocean_blue_dark"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_camera"
+                    app:tint="#FFFFFF" />
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+
+        <!-- LinearLayout chứa Tên và Email nằm thẳng hàng bên phải Avatar (Đã khôi phục) -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
-            android:layout_toEndOf="@id/img_avatar"
+            android:layout_toEndOf="@id/avatar_container"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_profile_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nguyễn Văn Sinh Viên"
+                android:text="Đang tải..."
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -44,57 +78,89 @@
                 android:id="@+id/tv_profile_email"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="sinhvien@hust.edu.vn"
+                android:text="email@edu.vn"
                 android:textColor="@color/white"
                 android:textSize="14sp" />
         </LinearLayout>
     </RelativeLayout>
 
+    <!-- Nội dung cuộn bên dưới (Đè lấn lên Header 20dp tạo hiệu ứng nổi) -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="-20dp">
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:orientation="vertical">
 
-            <LinearLayout
+            <!-- Thẻ Menu Cài đặt & Tiện ích -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
+                android:layout_marginHorizontal="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
 
-                <TextView
-                    style="@style/ProfileOptionStyle"
-                    android:text="Địa chỉ nhận hàng"
-                    app:drawableStartCompat="@drawable/ic_location" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                <View style="@style/DividerStyle" />
+                    <TextView
+                        android:id="@+id/btn_settings"
+                        style="@style/ProfileOptionStyle"
+                        android:text="Cài đặt tài khoản"
+                        app:drawableStartCompat="@android:drawable/ic_menu_preferences"
+                        app:drawableTint="@color/ocean_blue_primary" />
 
-                <TextView
-                    style="@style/ProfileOptionStyle"
-                    android:text="Cài đặt tài khoản"
-                    app:drawableStartCompat="@drawable/ic_settings" />
+                    <View style="@style/DividerStyle" />
 
-                <View style="@style/DividerStyle" />
+                    <TextView
+                        android:id="@+id/btn_help"
+                        style="@style/ProfileOptionStyle"
+                        android:text="Trung tâm trợ giúp"
+                        app:drawableStartCompat="@android:drawable/ic_menu_help"
+                        app:drawableTint="@color/ocean_blue_primary" />
 
-                <TextView
-                    style="@style/ProfileOptionStyle"
-                    android:text="Trung tâm trợ giúp"
-                    app:drawableStartCompat="@drawable/ic_help" />
+                    <View style="@style/DividerStyle" />
 
-                <View style="@style/DividerStyle" />
+                    <TextView
+                        android:id="@+id/btn_logout"
+                        style="@style/ProfileOptionStyle"
+                        android:text="Đăng xuất"
+                        android:textColor="#E74C3C"
+                        app:drawableStartCompat="@android:drawable/ic_lock_power_off"
+                        app:drawableTint="#E74C3C" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    style="@style/ProfileOptionStyle"
-                    android:text="Đăng xuất"
-                    android:textColor="#E74C3C"
-                    app:drawableStartCompat="@drawable/ic_logout" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <!-- Tiêu đề Phần sản phẩm cá nhân đã đăng -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="24dp"
+                android:text="Bài đăng của bạn"
+                android:textColor="@color/ocean_blue_dark"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- RecyclerView hiển thị sản phẩm của chính User đó dạng lưới 2 cột -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_my_products"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="10dp"
+                android:paddingBottom="40dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2"
+                tools:listitem="@layout/item_product" />
+
+        </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

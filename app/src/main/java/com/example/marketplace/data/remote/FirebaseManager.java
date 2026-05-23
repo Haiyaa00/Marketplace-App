@@ -105,4 +105,8 @@ public class FirebaseManager {
     public Task<Uri> getDownloadUrl(String fileName) {
         return storage.getReference().child("product_images/" + fileName).getDownloadUrl();
     }
+
+    public Task<Void> deleteProduct(String productId) {
+        return db.collection(COLLECTION_PRODUCTS).document(productId).delete();
+    }
 }

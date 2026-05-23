@@ -5,18 +5,17 @@ plugins {
 
 android {
     namespace = "com.example.marketplace"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36 // Đã sửa lại cú pháp chuẩn cho Kotlin DSL
 
     defaultConfig {
         applicationId = "com.example.marketplace"
-        minSdk = 24
+        minSdk = 26 // Nâng cấp từ 24 lên 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -51,24 +50,24 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
 
-    // - Firebase BoM (Tự động quản lý version cho các thư viện Firebase)
+    // - Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
 
-    // - Navigation Component (Dùng cho kiến trúc 1 Activity + Nhiều Fragment)
+    // - Navigation Component
     val navVersion = "2.7.7"
     implementation("androidx.navigation:navigation-fragment:$navVersion")
     implementation("androidx.navigation:navigation-ui:$navVersion")
 
-    // - Glide (Thư viện load ảnh)
+    // - Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-    // - Shimmer (Hiệu ứng khung loading Skeleton lúc chờ load data)
+    // - Shimmer
     implementation("com.facebook.shimmer:shimmer:0.5.0")
 
-    // - SwipeRefreshLayout (Vuốt từ trên xuống để Refresh Feed)
+    // - SwipeRefreshLayout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     implementation("com.cloudinary:cloudinary-android:2.5.0")

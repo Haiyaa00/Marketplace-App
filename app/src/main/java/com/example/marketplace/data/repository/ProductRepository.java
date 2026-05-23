@@ -29,24 +29,29 @@ public class ProductRepository {
         this.firebaseManager = FirebaseManager.getInstance();
         AppDatabase db = AppDatabase.getInstance(application);
         this.productDao = db.productDao();
-        this.executor = Executors.newFixedThreadPool(2); // Cấp 2 luồng để xử lý DB nhanh hơn
+        this.executor = Executors.newFixedThreadPool(2);
     }
 
     // ================== OFFLINE-FIRST READ ==================
 
-    // View (UI) sẽ luôn gọi hàm này để lấy LiveData. Room sẽ tự notify khi có data thay đổi.
     public LiveData<List<ProductEntity>> getAllProductsLocally() {
         return productDao.getAllProducts();
     }
 
     public LiveData<List<ProductEntity>> searchProductsLocally(String query) {
-        // Logic search offline realtime với LIKE
         return productDao.searchProducts(query);
     }
 
+    // ========================================================
+    // ĐÂY LÀ HÀM CÒN THIẾU CẦN THÊM VÀO ĐỂ FIX LỖI BIÊN DỊCH
+    // ========================================================
+    public LiveData<List<ProductEntity>> getMyProducts(String userId) {
+        return productDao.getMyProducts(userId);
+    }
+    // ========================================================
+
     // ================== REMOTE FETCH & SYNC ==================
 
-    // Hàm kéo dữ liệu mới nhất từ Firestore về và lưu đè xuống Room (Pull to Refresh)
     public LiveData<Resource<Void>> refreshProducts() {
         MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
         result.setValue(Resource.loading(null));
@@ -57,13 +62,16 @@ public class ProductRepository {
                 for (DocumentSnapshot doc : task.getResult().getDocuments()) {
                     Product product = doc.toObject(Product.class);
                     if (product != null) {
+                        // Giải pháp chống crash nếu id bị null từ Firestore
+                        if (product.getId() == null || product.getId().isEmpty()) {
+                            product.setId(doc.getId());
+                        }
                         fetchedProducts.add(product);
                     }
                 }
 
-                // Đồng bộ xuống Local (Xóa dữ liệu cũ nếu muốn đảm bảo đồng bộ hoàn toàn, hoặc cứ để REPLACE đè lên)
+                // Đồng bộ xuống local sqlite
                 executor.execute(() -> {
-                    // productDao.clearAllProducts(); // Mở comment dòng này nếu muốn xóa sạch cache cũ mỗi lần refresh
                     productDao.insertProducts(DataMapper.mapToProductEntityList(fetchedProducts));
                     result.postValue(Resource.success(null));
                 });
@@ -78,7 +86,6 @@ public class ProductRepository {
 
     // ================== CREATE PRODUCT ==================
 
-    // Tạo sản phẩm mới (Đẩy lên Firebase -> Xong thì push xuống Local Room ngay lập tức)
     public LiveData<Resource<Void>> createProduct(Product product) {
         MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
         result.setValue(Resource.loading(null));
@@ -92,6 +99,26 @@ public class ProductRepository {
             } else {
                 result.setValue(Resource.error(task.getException() != null ?
                         task.getException().getMessage() : "Failed to save product", null));
+            }
+        });
+        return result;
+    }
+
+    public LiveData<Resource<Void>> deleteProduct(String productId) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        // 1. Xóa trên Firestore
+        firebaseManager.deleteProduct(productId).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                // 2. Xóa trên SQLite cục bộ
+                executor.execute(() -> {
+                    productDao.deleteProductById(productId);
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Lỗi khi xóa bài đăng!", null));
             }
         });
         return result;

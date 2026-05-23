@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.marketplace.MainActivity;
 import com.example.marketplace.databinding.ActivityLoginBinding;
 import com.example.marketplace.utils.ValidatorUtils;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -20,6 +21,24 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() != null && auth.getCurrentUser().isEmailVerified()) {
+            // Nếu Firebase ghi nhận đã đăng nhập + email đã click link xác thực
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish(); // Đóng LoginActivity ngay lập tức để người dùng không bấm BACK quay lại được
+            return;   // DỪNG thực hiện các dòng lệnh bên dưới (Không khởi tạo giao diện Login)
+        }
+        // ============================================================================
+
+        // Nếu chưa đăng nhập, khởi tạo giao diện Login như bình thường
+        binding = ActivityLoginBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        viewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
+        setupListeners();
 
         // 1. Khởi tạo ViewBinding
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
