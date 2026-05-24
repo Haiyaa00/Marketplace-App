@@ -57,7 +57,8 @@ public class ProfileViewModel extends AndroidViewModel {
         MutableLiveData<Resource<String>> result = new MutableLiveData<>();
         result.setValue(Resource.loading(null));
 
-        CloudinaryManager.getInstance().uploadImage(imageUri).addOnCompleteListener(task -> {
+        // SỬ DỤNG getApplication() LÀM CONTEXT TRUYỀN VÀO
+        CloudinaryManager.getInstance().uploadImage(getApplication(), imageUri).addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 result.setValue(Resource.success(task.getResult()));
             } else {

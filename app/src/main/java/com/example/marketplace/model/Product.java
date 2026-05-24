@@ -1,5 +1,7 @@
 package com.example.marketplace.model;
 
+import java.util.List;
+
 public class Product {
     private String id;
     private String sellerId;
@@ -7,15 +9,17 @@ public class Product {
     private double price;
     private String description;
     private String category;
-    private String imageUrl;
+    private String imageUrl; // Ảnh đại diện
+    private List<String> imageUrls; // Danh sách tất cả ảnh
     private long timestamp;
+    private String contactPhone;
 
     // BẮT BUỘC: Constructor rỗng cho Firebase Firestore
     public Product() {
     }
 
     public Product(String id, String sellerId, String title, double price,
-                   String description, String category, String imageUrl, long timestamp) {
+                   String description, String category, String imageUrl, List<String> imageUrls, long timestamp, String contactPhone) {
         this.id = id;
         this.sellerId = sellerId;
         this.title = title;
@@ -23,7 +27,9 @@ public class Product {
         this.description = description;
         this.category = category;
         this.imageUrl = imageUrl;
+        this.imageUrls = imageUrls;
         this.timestamp = timestamp;
+        this.contactPhone = contactPhone;
     }
 
     // Getters and Setters
@@ -48,6 +54,12 @@ public class Product {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
+
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
 }

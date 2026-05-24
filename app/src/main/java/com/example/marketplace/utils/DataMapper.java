@@ -32,8 +32,9 @@ public class DataMapper {
                 product.getPrice(),
                 product.getDescription(),
                 product.getCategory(),
-                product.getImageUrl(),
-                product.getTimestamp()
+                product.getImageUrls(),
+                product.getTimestamp(),
+                product.getContactPhone()
         );
     }
 

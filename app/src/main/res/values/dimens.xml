@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ÉP KHOẢNG CÁCH GIỮA ICON VÀ CHỮ VỀ 0 HOẶC RẤT NHỎ -->
+    <!-- Dành cho thư viện Material 3 mới nhất -->
+    <dimen name="mtrl_navigation_bar_item_default_margin" tools:override="true">0dp</dimen>
+
+</resources>

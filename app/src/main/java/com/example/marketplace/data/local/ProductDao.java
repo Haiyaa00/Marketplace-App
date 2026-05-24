@@ -33,4 +33,7 @@ public interface ProductDao {
 
     @Query("DELETE FROM products WHERE id = :productId")
     void deleteProductById(String productId);
+
+    @Query("SELECT * FROM products WHERE id = :productId LIMIT 1")
+    LiveData<ProductEntity> getProductById(String productId);
 }

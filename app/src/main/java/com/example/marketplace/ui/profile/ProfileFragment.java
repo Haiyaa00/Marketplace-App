@@ -130,6 +130,7 @@ public class ProfileFragment extends Fragment {
                 showAvatarViewerDialog();
             }
         });
+
     }
 
     // ================= CHỨC NĂNG XEM ẢNH ĐẠI DIỆN PHÓNG TO =================

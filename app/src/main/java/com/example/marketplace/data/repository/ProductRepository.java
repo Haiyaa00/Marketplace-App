@@ -48,6 +48,10 @@ public class ProductRepository {
     public LiveData<List<ProductEntity>> getMyProducts(String userId) {
         return productDao.getMyProducts(userId);
     }
+
+    public LiveData<ProductEntity> getProductByIdLocally(String productId) {
+        return productDao.getProductById(productId);
+    }
     // ========================================================
 
     // ================== REMOTE FETCH & SYNC ==================

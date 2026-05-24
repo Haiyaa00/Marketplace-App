@@ -71,4 +71,6 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     implementation("com.cloudinary:cloudinary-android:2.5.0")
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }

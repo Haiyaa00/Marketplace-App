@@ -1,6 +1,7 @@
 package com.example.marketplace.ui.home;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -62,14 +63,19 @@ public class HomeFragment extends Fragment {
         mockCategories.add(new com.example.marketplace.model.Category("Khác", android.R.drawable.ic_menu_preferences));
 
         // Thiết lập Adapter cho Danh mục
+        productAdapter = new ProductAdapter(false);
+        binding.rvProducts.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2));
+        binding.rvProducts.setAdapter(productAdapter);
         categoryAdapter = new CategoryAdapter(mockCategories);
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         binding.rvCategories.setAdapter(categoryAdapter); // Gán Adapter thành công!
 
         // Khởi tạo và gán Adapter cho Products RecyclerView
-        productAdapter = new ProductAdapter(false);
-        binding.rvProducts.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        binding.rvProducts.setAdapter(productAdapter); // MỞ COMMENT DÒNG NÀY
+        productAdapter.setOnProductClickListener(product -> {
+            Intent intent = new Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
+            intent.putExtra("PRODUCT_ID", product.id);
+            startActivity(intent);
+        });
     }
 
     private void setupSwipeRefresh() {

@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
             NavController navController = navHostFragment.getNavController();
             // Gắn Bottom Navigation với NavController (Ma thuật tự động chuyển trang nằm ở đây)
             NavigationUI.setupWithNavController(binding.bottomNavigation, navController);
+            binding.bottomNavigation.setItemActiveIndicatorColor(null);
         }
     }
 }

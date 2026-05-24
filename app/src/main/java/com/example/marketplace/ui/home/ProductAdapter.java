@@ -52,7 +52,7 @@ public class ProductAdapter extends ListAdapter<ProductEntity, ProductAdapter.Pr
 
         @Override
         public boolean areContentsTheSame(@NonNull ProductEntity oldItem, @NonNull ProductEntity newItem) {
-            return oldItem.title.equals(newItem.title) && oldItem.price == newItem.price && oldItem.imageUrl.equals(newItem.imageUrl);
+            return oldItem.title.equals(newItem.title) && oldItem.price == newItem.price && oldItem.imageUrls.equals(newItem.imageUrls);
         }
     };
 
@@ -86,10 +86,12 @@ public class ProductAdapter extends ListAdapter<ProductEntity, ProductAdapter.Pr
             DecimalFormat formatter = new DecimalFormat("#,###");
             binding.tvProductPrice.setText(formatter.format(product.price) + " đ");
 
-            Glide.with(itemView.getContext())
-                    .load(product.imageUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(binding.ivProductImage);
+            if (product.imageUrls != null && !product.imageUrls.isEmpty()) {
+                Glide.with(itemView.getContext())
+                        .load(product.imageUrls.get(0)) // Lấy ảnh đầu tiên làm ảnh đại diện
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .into(binding.ivProductImage);
+            }
 
             // 1. Điều khiển ẩn hiện nút Thùng rác
             if (showDelete) {
