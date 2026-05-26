@@ -81,7 +81,8 @@ public class ProductAdapter extends ListAdapter<ProductEntity, ProductAdapter.Pr
                          OnProductClickListener productListener, OnDeleteClickListener deleteListener) {
 
             binding.tvProductTitle.setText(product.title);
-            binding.tvProductCategory.setText(product.category);
+            String relativeTime = com.example.marketplace.utils.DateUtils.getRelativeTimeSpan(product.timestamp);
+            binding.tvProductCategory.setText(product.category + " • " + relativeTime);
 
             DecimalFormat formatter = new DecimalFormat("#,###");
             binding.tvProductPrice.setText(formatter.format(product.price) + " đ");

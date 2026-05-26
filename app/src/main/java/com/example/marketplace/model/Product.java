@@ -13,13 +13,17 @@ public class Product {
     private List<String> imageUrls; // Danh sách tất cả ảnh
     private long timestamp;
     private String contactPhone;
+    private String address;
+    private int viewCount;
 
     // BẮT BUỘC: Constructor rỗng cho Firebase Firestore
     public Product() {
     }
 
     public Product(String id, String sellerId, String title, double price,
-                   String description, String category, String imageUrl, List<String> imageUrls, long timestamp, String contactPhone) {
+                   String description, String category, String imageUrl, List<String> imageUrls, long timestamp,
+                   String contactPhone, String Address, int viewCount) {
+
         this.id = id;
         this.sellerId = sellerId;
         this.title = title;
@@ -30,6 +34,8 @@ public class Product {
         this.imageUrls = imageUrls;
         this.timestamp = timestamp;
         this.contactPhone = contactPhone;
+        this.address = address;
+        this.viewCount = viewCount;
     }
 
     // Getters and Setters
@@ -62,4 +68,11 @@ public class Product {
 
     public String getContactPhone() { return contactPhone; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public int getViewCount() { return viewCount; }
+    public void setViewCount(int viewCount) { this.viewCount = viewCount; }
+
 }

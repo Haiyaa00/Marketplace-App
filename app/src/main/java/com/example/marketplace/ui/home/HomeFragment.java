@@ -72,7 +72,12 @@ public class HomeFragment extends Fragment {
 
         // Khởi tạo và gán Adapter cho Products RecyclerView
         productAdapter.setOnProductClickListener(product -> {
-            Intent intent = new Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
+            // 1. GỌI HÀM TĂNG VIEW LÊN FIRESTORE
+            new com.example.marketplace.data.repository.ProductRepository(requireActivity().getApplication())
+                    .incrementViewCount(product.id);
+
+            // 2. CHUYỂN SANG MÀN DETAIL
+            android.content.Intent intent = new android.content.Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
             intent.putExtra("PRODUCT_ID", product.id);
             startActivity(intent);
         });

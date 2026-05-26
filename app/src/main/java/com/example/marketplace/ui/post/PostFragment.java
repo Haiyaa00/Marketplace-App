@@ -21,6 +21,8 @@ import com.example.marketplace.R;
 import com.example.marketplace.data.local.UserEntity;
 import com.example.marketplace.databinding.FragmentPostBinding;
 import com.example.marketplace.model.Product;
+import com.example.marketplace.ui.home.ProductAdapter;
+import com.example.marketplace.utils.AddressParser;
 import com.example.marketplace.utils.Resource;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ public class PostFragment extends Fragment {
     // Quản lý nhiều ảnh
     private List<Uri> selectedUris = new ArrayList<>();
     private SelectedImageAdapter imageAdapter;
+    private ProductAdapter myPostsAdapter;
 
     // Bộ chọn nhiều ảnh từ Gallery
     private final ActivityResultLauncher<String> pickMultipleImagesLauncher =
@@ -66,9 +69,35 @@ public class PostFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
         setupDropdownMenu();
+        setupAddressDropdowns();
         setupImageRecyclerView();
         observeCurrentUser();
         setupListeners();
+        setupTabLayout();
+        setupManagePostsRecyclerView();
+    }
+
+    private void setupAddressDropdowns() {
+        // Load data từ JSON
+        AddressParser.loadHanoiData(requireContext());
+
+        // Đổ danh sách Quận ra Dropdown
+        List<String> districts = AddressParser.getDistricts();
+        ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, districts);
+        binding.actDistrict.setAdapter(districtAdapter);
+
+        // Sự kiện: Khi chọn Quận -> Load Phường tương ứng
+        binding.actDistrict.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedDistrict = (String) parent.getItemAtPosition(position);
+            
+            // Xóa dữ liệu Phường cũ
+            binding.actWard.setText("", false);
+            
+            // Đổ danh sách Phường mới
+            List<String> wards = AddressParser.getWards(selectedDistrict);
+            ArrayAdapter<String> wardAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, wards);
+            binding.actWard.setAdapter(wardAdapter);
+        });
     }
 
     private void observeCurrentUser() {
@@ -115,6 +144,19 @@ public class PostFragment extends Fragment {
         String category = binding.actCategory.getText().toString().trim();
         String description = binding.edtDescription.getText().toString().trim();
         String contactPhone = binding.edtContactPhone.getText().toString().trim();
+        
+        // Thu thập địa chỉ chi tiết
+        String street = binding.edtStreet.getText().toString().trim();
+        String ward = binding.actWard.getText().toString().trim();
+        String district = binding.actDistrict.getText().toString().trim();
+        String city = binding.edtCity.getText().toString().trim();
+
+        if (street.isEmpty() || ward.isEmpty() || district.isEmpty()) {
+            Toast.makeText(requireContext(), "Vui lòng nhập đầy đủ địa chỉ!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String fullAddress = street + ", " + ward + ", " + district + ", " + city;
 
         if (selectedUris.isEmpty()) {
             Toast.makeText(requireContext(), "Vui lòng chọn ít nhất 1 ảnh!", Toast.LENGTH_SHORT).show();
@@ -138,7 +180,7 @@ public class PostFragment extends Fragment {
         viewModel.uploadMultipleImagesToCloud(requireContext(), selectedUris).observe(getViewLifecycleOwner(), resource -> {
             if (resource.status == Resource.Status.SUCCESS) {
                 List<String> imageUrls = resource.data;
-                saveProductToDatabase(title, price, category, description, contactPhone, imageUrls);
+                saveProductToDatabase(title, price, category, description, contactPhone, fullAddress, imageUrls);
             } else if (resource.status == Resource.Status.ERROR) {
                 showLoading(false);
                 Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show();
@@ -146,7 +188,7 @@ public class PostFragment extends Fragment {
         });
     }
 
-    private void saveProductToDatabase(String title, double price, String category, String desc, String contactPhone, List<String> imageUrls) {
+    private void saveProductToDatabase(String title, double price, String category, String desc, String contactPhone, String address, List<String> imageUrls) {
         if (mCurrentUser == null) return;
 
         Product product = new Product();
@@ -157,7 +199,11 @@ public class PostFragment extends Fragment {
         product.setSellerId(mCurrentUser.uid);
         product.setContactPhone(contactPhone);
         product.setImageUrls(imageUrls); // Set danh sách link ảnh
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            product.setImageUrl(imageUrls.get(0)); // Set ảnh đại diện
+        }
         product.setTimestamp(System.currentTimeMillis());
+        product.setAddress(address); // Gán địa chỉ vào đối tượng sản phẩm
 
         viewModel.createProduct(product).observe(getViewLifecycleOwner(), resource -> {
             switch (resource.status) {
@@ -171,6 +217,48 @@ public class PostFragment extends Fragment {
                     showLoading(false);
                     Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show();
                     break;
+            }
+        });
+    }
+
+    private void setupTabLayout() {
+        binding.tabLayout.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                if (tab.getPosition() == 0) { // Tab Đăng Bán
+                    binding.layoutCreatePost.setVisibility(View.VISIBLE);
+                    binding.layoutManagePosts.setVisibility(View.GONE);
+                } else { // Tab Quản Lý
+                    binding.layoutCreatePost.setVisibility(View.GONE);
+                    binding.layoutManagePosts.setVisibility(View.VISIBLE);
+                    // Load danh sách bài đăng của User
+                    if (mCurrentUser != null) {
+                        loadMyPosts();
+                    }
+                }
+            }
+            @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+            @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+        });
+    }
+
+    private void setupManagePostsRecyclerView() {
+        // Truyền "true" để hiển thị nút Xóa (Thùng rác đỏ)
+        myPostsAdapter = new ProductAdapter(true);
+        binding.rvMyPosts.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2));
+        binding.rvMyPosts.setAdapter(myPostsAdapter);
+
+        // Sự kiện xóa bài
+        myPostsAdapter.setOnDeleteClickListener(product -> {
+            // Hiển thị Dialog xóa tương tự bên ProfileFragment (Bạn có thể copy sang)
+            // viewModel.deleteProduct(product.id) ...
+        });
+    }
+
+    private void loadMyPosts() {
+        viewModel.getMyProducts(mCurrentUser.uid).observe(getViewLifecycleOwner(), products -> {
+            if (products != null) {
+                myPostsAdapter.submitList(products);
             }
         });
     }
@@ -195,6 +283,10 @@ public class PostFragment extends Fragment {
         binding.actCategory.setText("");
         binding.edtDescription.setText("");
         binding.edtContactPhone.setText("");
+        
+        binding.actDistrict.setText("", false);
+        binding.actWard.setText("", false);
+        binding.edtStreet.setText("");
 
         selectedUris.clear();
         imageAdapter.notifyDataSetChanged();

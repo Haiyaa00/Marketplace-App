@@ -42,15 +42,18 @@ public class ProductRepository {
         return productDao.searchProducts(query);
     }
 
-    // ========================================================
-    // ĐÂY LÀ HÀM CÒN THIẾU CẦN THÊM VÀO ĐỂ FIX LỖI BIÊN DỊCH
-    // ========================================================
     public LiveData<List<ProductEntity>> getMyProducts(String userId) {
         return productDao.getMyProducts(userId);
     }
 
     public LiveData<ProductEntity> getProductByIdLocally(String productId) {
         return productDao.getProductById(productId);
+    }
+
+    public void incrementViewCount(String productId) {
+        // Tăng view trên Firestore (Bảo mật: Atomic operation)
+        firebaseManager.getDb().collection("Products").document(productId)
+                .update("viewCount", com.google.firebase.firestore.FieldValue.increment(1));
     }
     // ========================================================
 

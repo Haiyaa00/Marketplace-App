@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.marketplace.data.local.ProductEntity;
 import com.example.marketplace.data.local.UserEntity;
 import com.example.marketplace.data.remote.CloudinaryManager;
 import com.example.marketplace.data.repository.AuthRepository;
@@ -47,7 +48,6 @@ public class PostViewModel extends AndroidViewModel {
 
         for (Uri uri : imageUris) {
             Uri compressedUri = ImageUtils.compressImage(context, uri);
-            // TRUYỀN THÊM CONTEXT VÀO ĐÂY
             uploadTasks.add(CloudinaryManager.getInstance().uploadImage(context, compressedUri));
         }
 
@@ -69,5 +69,13 @@ public class PostViewModel extends AndroidViewModel {
     // 3. Đăng sản phẩm mới lên hệ thống
     public LiveData<Resource<Void>> createProduct(Product product) {
         return productRepository.createProduct(product);
+    }
+
+    public LiveData<List<ProductEntity>> getMyProducts(String userId) {
+        return productRepository.getMyProducts(userId);
+    }
+
+    public LiveData<Resource<Void>> deleteProduct(String productId) {
+        return productRepository.deleteProduct(productId);
     }
 }

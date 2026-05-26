@@ -79,7 +79,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Chỉ dành cho sinh viên có email @edu.vn"
+                android:text="Chỉ dành cho sinh viên có email @kientruchanoi.edu.vn"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"

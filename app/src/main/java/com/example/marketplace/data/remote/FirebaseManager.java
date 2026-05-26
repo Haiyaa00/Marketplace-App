@@ -109,4 +109,6 @@ public class FirebaseManager {
     public Task<Void> deleteProduct(String productId) {
         return db.collection(COLLECTION_PRODUCTS).document(productId).delete();
     }
+
+    public com.google.firebase.firestore.FirebaseFirestore getDb() { return db; }
 }

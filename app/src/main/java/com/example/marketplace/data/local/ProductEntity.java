@@ -20,9 +20,12 @@ public class ProductEntity {
     public List<String> imageUrls;
     public long timestamp;
     public String contactPhone;
+    public String address;
+    public int viewCount;
 
     public ProductEntity(@NonNull String id, String sellerId, String title, double price,
-                         String description, String category, List<String> imageUrls, long timestamp, String contactPhone) {
+                         String description, String category, List<String> imageUrls, long timestamp,
+                         String contactPhone, String address, int viewCount) {
         this.id = id;
         this.sellerId = sellerId;
         this.title = title;
@@ -32,5 +35,7 @@ public class ProductEntity {
         this.imageUrls = imageUrls;
         this.timestamp = timestamp;
         this.contactPhone = contactPhone;
+        this.address = address;
+        this.viewCount = viewCount;
     }
 }

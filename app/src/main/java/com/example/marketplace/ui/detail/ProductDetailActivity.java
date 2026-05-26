@@ -64,7 +64,8 @@ public class ProductDetailActivity extends AppCompatActivity {
                 binding.tvPrice.setText(formatter.format(product.price) + " đ");
 
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", new Locale("vi", "VN"));
-                binding.tvDate.setText(sdf.format(new Date(product.timestamp)));
+                binding.tvDate.setText(com.example.marketplace.utils.DateUtils.getRelativeTimeSpan(product.timestamp));
+                binding.tvAddress.setText(product.address);
 
                 // Set Ảnh Slider (ViewPager2)
                 setupImageSlider(product.imageUrls);

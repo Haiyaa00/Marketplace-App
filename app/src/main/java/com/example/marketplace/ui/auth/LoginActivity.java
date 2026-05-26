@@ -78,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Gọi helper mà ta đã viết ở Bước 3
         if (!ValidatorUtils.isValidEduEmail(email)) {
-            binding.tilEmail.setError("Chỉ chấp nhận email sinh viên @edu.vn");
+            binding.tilEmail.setError("Chỉ chấp nhận email sinh viên @kientruchanoi.edu.vn");
             return;
         }
 
