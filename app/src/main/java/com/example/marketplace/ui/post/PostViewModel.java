@@ -78,4 +78,8 @@ public class PostViewModel extends AndroidViewModel {
     public LiveData<Resource<Void>> deleteProduct(String productId) {
         return productRepository.deleteProduct(productId);
     }
+
+    public LiveData<ProductEntity> getProductById(String productId) {
+        return productRepository.getProductByIdLocally(productId);
+    }
 }

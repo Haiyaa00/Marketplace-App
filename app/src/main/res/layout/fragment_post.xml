@@ -209,11 +209,11 @@
                 </com.google.android.material.card.MaterialCardView>
 
 
-                <!-- 3. Địa điểm giao dịch -->
+                <!-- 3. Địa chỉ -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Địa điểm giao dịch"
+                    android:text="Địa chỉ"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:layout_marginBottom="8dp"/>

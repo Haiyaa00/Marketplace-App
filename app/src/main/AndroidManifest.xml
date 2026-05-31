@@ -36,6 +36,10 @@
 
         <activity android:name=".ui.detail.ProductDetailActivity" />
 
+        <activity android:name=".ui.post.EditPostActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 
 </manifest>

@@ -18,10 +18,10 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.marketplace.R;
+import com.example.marketplace.data.local.ProductEntity;
 import com.example.marketplace.data.local.UserEntity;
 import com.example.marketplace.databinding.FragmentPostBinding;
 import com.example.marketplace.model.Product;
-import com.example.marketplace.ui.home.ProductAdapter;
 import com.example.marketplace.utils.AddressParser;
 import com.example.marketplace.utils.Resource;
 
@@ -34,10 +34,12 @@ public class PostFragment extends Fragment {
     private PostViewModel viewModel;
     private UserEntity mCurrentUser;
 
-    // Quản lý nhiều ảnh
+    // Quản lý ảnh
     private List<Uri> selectedUris = new ArrayList<>();
     private SelectedImageAdapter imageAdapter;
-    private ProductAdapter myPostsAdapter;
+
+    // Adapter cho Tab Quản lý bài đăng
+    private ManagePostAdapter managePostAdapter;
 
     // Bộ chọn nhiều ảnh từ Gallery
     private final ActivityResultLauncher<String> pickMultipleImagesLauncher =
@@ -78,22 +80,16 @@ public class PostFragment extends Fragment {
     }
 
     private void setupAddressDropdowns() {
-        // Load data từ JSON
         AddressParser.loadHanoiData(requireContext());
 
-        // Đổ danh sách Quận ra Dropdown
         List<String> districts = AddressParser.getDistricts();
         ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, districts);
         binding.actDistrict.setAdapter(districtAdapter);
 
-        // Sự kiện: Khi chọn Quận -> Load Phường tương ứng
         binding.actDistrict.setOnItemClickListener((parent, view, position, id) -> {
             String selectedDistrict = (String) parent.getItemAtPosition(position);
-            
-            // Xóa dữ liệu Phường cũ
             binding.actWard.setText("", false);
-            
-            // Đổ danh sách Phường mới
+
             List<String> wards = AddressParser.getWards(selectedDistrict);
             ArrayAdapter<String> wardAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, wards);
             binding.actWard.setAdapter(wardAdapter);
@@ -103,6 +99,7 @@ public class PostFragment extends Fragment {
     private void observeCurrentUser() {
         viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
             mCurrentUser = user;
+            // Tự động điền số điện thoại
             if (user != null && binding.edtContactPhone.getText().toString().isEmpty()) {
                 binding.edtContactPhone.setText(user.phone);
             }
@@ -120,7 +117,6 @@ public class PostFragment extends Fragment {
         binding.rvSelectedImages.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         binding.rvSelectedImages.setAdapter(imageAdapter);
 
-        // Bấm nút thêm ảnh
         binding.btnAddImages.setOnClickListener(v -> {
             if (selectedUris.size() >= 10) {
                 Toast.makeText(requireContext(), "Đã đạt tối đa 10 ảnh!", Toast.LENGTH_SHORT).show();
@@ -144,7 +140,7 @@ public class PostFragment extends Fragment {
         String category = binding.actCategory.getText().toString().trim();
         String description = binding.edtDescription.getText().toString().trim();
         String contactPhone = binding.edtContactPhone.getText().toString().trim();
-        
+
         // Thu thập địa chỉ chi tiết
         String street = binding.edtStreet.getText().toString().trim();
         String ward = binding.actWard.getText().toString().trim();
@@ -156,8 +152,10 @@ public class PostFragment extends Fragment {
             return;
         }
 
+        // Tạo 1 string địa chỉ hoàn chỉnh
         String fullAddress = street + ", " + ward + ", " + district + ", " + city;
 
+        // Bắt lỗi Validation
         if (selectedUris.isEmpty()) {
             Toast.makeText(requireContext(), "Vui lòng chọn ít nhất 1 ảnh!", Toast.LENGTH_SHORT).show();
             return;
@@ -174,13 +172,13 @@ public class PostFragment extends Fragment {
         }
 
         double price = Double.parseDouble(priceStr);
-
         showLoading(true);
 
+        // Upload ảnh lên mạng trước (Do màn này giờ chỉ là màn TẠO MỚI)
         viewModel.uploadMultipleImagesToCloud(requireContext(), selectedUris).observe(getViewLifecycleOwner(), resource -> {
             if (resource.status == Resource.Status.SUCCESS) {
-                List<String> imageUrls = resource.data;
-                saveProductToDatabase(title, price, category, description, contactPhone, fullAddress, imageUrls);
+                // Thứ tự tham số chuẩn: Tên, Giá, Danh mục, Mô tả, SĐT, Địa chỉ, Danh sách link ảnh
+                saveProductToDatabase(title, price, category, description, contactPhone, fullAddress, resource.data);
             } else if (resource.status == Resource.Status.ERROR) {
                 showLoading(false);
                 Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show();
@@ -192,18 +190,21 @@ public class PostFragment extends Fragment {
         if (mCurrentUser == null) return;
 
         Product product = new Product();
+        product.setTimestamp(System.currentTimeMillis());
+        product.setViewCount(0); // Lượt xem ban đầu luôn = 0
         product.setTitle(title);
         product.setPrice(price);
         product.setCategory(category);
         product.setDescription(desc);
         product.setSellerId(mCurrentUser.uid);
         product.setContactPhone(contactPhone);
-        product.setImageUrls(imageUrls); // Set danh sách link ảnh
+        product.setAddress(address);
+        product.setImageUrls(imageUrls);
+
+        // Set ảnh đầu tiên làm ảnh đại diện phụ (cho các class cũ chưa kịp migrate sang imageUrls)
         if (imageUrls != null && !imageUrls.isEmpty()) {
-            product.setImageUrl(imageUrls.get(0)); // Set ảnh đại diện
+            product.setImageUrl(imageUrls.get(0));
         }
-        product.setTimestamp(System.currentTimeMillis());
-        product.setAddress(address); // Gán địa chỉ vào đối tượng sản phẩm
 
         viewModel.createProduct(product).observe(getViewLifecycleOwner(), resource -> {
             switch (resource.status) {
@@ -211,11 +212,13 @@ public class PostFragment extends Fragment {
                     showLoading(false);
                     Toast.makeText(requireContext(), "Đăng bài thành công!", Toast.LENGTH_SHORT).show();
                     resetForm();
+                    // Đẩy về Trang chủ
                     Navigation.findNavController(requireView()).navigate(R.id.nav_home);
                     break;
+
                 case ERROR:
                     showLoading(false);
-                    Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Lỗi: " + resource.message, Toast.LENGTH_SHORT).show();
                     break;
             }
         });
@@ -243,22 +246,29 @@ public class PostFragment extends Fragment {
     }
 
     private void setupManagePostsRecyclerView() {
-        // Truyền "true" để hiển thị nút Xóa (Thùng rác đỏ)
-        myPostsAdapter = new ProductAdapter(true);
-        binding.rvMyPosts.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2));
-        binding.rvMyPosts.setAdapter(myPostsAdapter);
+        managePostAdapter = new ManagePostAdapter(new ManagePostAdapter.OnPostActionListener() {
+            @Override
+            public void onEdit(ProductEntity product) {
+                // CHUYỂN SANG MÀN HÌNH EDIT MỚI HOÀN TOÀN
+                android.content.Intent intent = new android.content.Intent(requireContext(), EditPostActivity.class);
+                intent.putExtra("PRODUCT_ID", product.id);
+                startActivity(intent);
+            }
 
-        // Sự kiện xóa bài
-        myPostsAdapter.setOnDeleteClickListener(product -> {
-            // Hiển thị Dialog xóa tương tự bên ProfileFragment (Bạn có thể copy sang)
-            // viewModel.deleteProduct(product.id) ...
+            @Override
+            public void onDelete(ProductEntity product) {
+                showDeleteConfirmDialog(product);
+            }
         });
+
+        binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvMyPosts.setAdapter(managePostAdapter);
     }
 
     private void loadMyPosts() {
         viewModel.getMyProducts(mCurrentUser.uid).observe(getViewLifecycleOwner(), products -> {
             if (products != null) {
-                myPostsAdapter.submitList(products);
+                managePostAdapter.submitList(products);
             }
         });
     }
@@ -268,7 +278,7 @@ public class PostFragment extends Fragment {
             binding.progressBar.setVisibility(View.VISIBLE);
             binding.btnPost.setText("");
             binding.btnPost.setEnabled(false);
-            binding.btnAddImages.setEnabled(false); // Khóa nút thêm ảnh khi đang upload
+            binding.btnAddImages.setEnabled(false);
         } else {
             binding.progressBar.setVisibility(View.GONE);
             binding.btnPost.setText("Đăng Bán Ngay");
@@ -280,17 +290,32 @@ public class PostFragment extends Fragment {
     private void resetForm() {
         binding.edtTitle.setText("");
         binding.edtPrice.setText("");
-        binding.actCategory.setText("");
+        binding.actCategory.setText("", false);
         binding.edtDescription.setText("");
-        binding.edtContactPhone.setText("");
-        
+        binding.edtContactPhone.setText(mCurrentUser != null ? mCurrentUser.phone : "");
+
         binding.actDistrict.setText("", false);
         binding.actWard.setText("", false);
         binding.edtStreet.setText("");
 
+        binding.tvImageCount.setText("0/10 ảnh");
+
         selectedUris.clear();
         imageAdapter.notifyDataSetChanged();
-        updateImageCount();
+    }
+
+    private void showDeleteConfirmDialog(ProductEntity product) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Xóa bài đăng")
+                .setMessage("Bạn có chắc muốn xóa: " + product.title + "?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    viewModel.deleteProduct(product.id).observe(getViewLifecycleOwner(), res -> {
+                        if (res.status == Resource.Status.SUCCESS) {
+                            Toast.makeText(requireContext(), "Đã xóa", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .setNegativeButton("Hủy", null).show();
     }
 
     @Override
