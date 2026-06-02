@@ -40,6 +40,8 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity android:name=".ui.chat.ChatActivity" />
+
     </application>
 
 </manifest>

@@ -23,7 +23,9 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private ActivityProductDetailBinding binding;
     private DetailViewModel viewModel;
-    private String contactPhone = ""; // Lưu tạm số điện thoại để gọi/zalo
+    private String contactPhone = ""; // Lưu tạm số điện thoại để gọi
+    private String sellerId = "";
+    private String sellerName ="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,10 +94,12 @@ public class ProductDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void loadSellerInfo(String sellerId) {
-        viewModel.getSellerInfo(sellerId).observe(this, seller -> {
+    private void loadSellerInfo(String sId) {
+        this.sellerId = sId;
+        viewModel.getSellerInfo(sId).observe(this, seller -> {
             if (seller != null) {
-                binding.tvSellerName.setText(seller.getName());
+                this.sellerName = seller.getName();
+                binding.tvSellerName.setText(sellerName);
 
                 Glide.with(this)
                         .load(seller.getAvatarUrl() != null && !seller.getAvatarUrl().isEmpty() ? seller.getAvatarUrl() : android.R.drawable.sym_def_app_icon)
@@ -118,20 +122,20 @@ public class ProductDetailActivity extends AppCompatActivity {
         });
 
         // NÚT CHAT ZALO (Mở app Zalo qua Deeplink)
-        binding.btnZalo.setOnClickListener(v -> {
-            if (contactPhone != null && !contactPhone.isEmpty()) {
-                // Định dạng số điện thoại chuẩn Zalo (Bỏ số 0 đầu, thay bằng 84)
-                String zaloPhone = contactPhone;
-                if (zaloPhone.startsWith("0")) {
-                    zaloPhone = "84" + zaloPhone.substring(1);
-                }
+        binding.btnChat.setText("Chat Ngay");
+        binding.btnChat.setOnClickListener(v -> {
+            // Không cho phép tự chat với chính mình
+            String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (currentUserId.equals(sellerId)) {
+                Toast.makeText(this, "Đây là sản phẩm của bạn!", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                String url = "https://zalo.me/" + zaloPhone;
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(url));
+            if (!sellerId.isEmpty()) {
+                Intent intent = new Intent(this, com.example.marketplace.ui.chat.ChatActivity.class);
+                intent.putExtra("PARTNER_ID", sellerId);
+                intent.putExtra("PARTNER_NAME", sellerName);
                 startActivity(intent);
-            } else {
-                Toast.makeText(this, "Không có số điện thoại!", Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -237,12 +237,12 @@
             android:textColor="@color/ocean_blue_primary" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnZalo"
+            android:id="@+id/btnChat"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Chat Zalo"
+            android:text="Chat Ngay"
             app:backgroundTint="#0068FF"
             app:cornerRadius="8dp"
             app:icon="@android:drawable/ic_dialog_email"

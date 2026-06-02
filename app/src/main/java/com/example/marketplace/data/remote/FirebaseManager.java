@@ -2,6 +2,7 @@ package com.example.marketplace.data.remote;
 
 import android.net.Uri;
 
+import com.example.marketplace.model.Message;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -111,4 +112,38 @@ public class FirebaseManager {
     }
 
     public com.google.firebase.firestore.FirebaseFirestore getDb() { return db; }
+
+    // Hàm tạo ID phòng chat độc nhất từ 2 UID
+    public String getChatRoomId(String uid1, String uid2) {
+        if (uid1.compareTo(uid2) < 0) {
+            return uid1 + "_" + uid2;
+        } else {
+            return uid2 + "_" + uid1;
+        }
+    }
+
+    // Gửi tin nhắn
+    public com.google.android.gms.tasks.Task<Void> sendMessage(String chatRoomId, String senderId, String receiverId, Message message) {
+        db.collection("ChatRooms").document(chatRoomId)
+                .collection("Messages").document(String.valueOf(message.getTimestamp()))
+                .set(message);
+
+        java.util.List<String> participants = java.util.Arrays.asList(senderId, receiverId);
+
+        // Truyền false vào cuối cho biến "read"
+        com.example.marketplace.model.ChatRoom room = new com.example.marketplace.model.ChatRoom(
+                chatRoomId, participants, message.getText(), message.getTimestamp(), senderId, false
+        );
+        return db.collection("ChatRooms").document(chatRoomId).set(room);
+    }
+
+    // Sửa trong hàm markChatAsRead (Cập nhật đúng trường "read"):
+    public void markChatAsRead(String chatRoomId) {
+        db.collection("ChatRooms").document(chatRoomId).update("read", true);
+    }
+
+    // Lấy Collection Reference để gắn Listener lắng nghe tin nhắn mới
+    public com.google.firebase.firestore.CollectionReference getMessagesReference(String chatRoomId) {
+        return db.collection("ChatRooms").document(chatRoomId).collection("Messages");
+    }
 }
