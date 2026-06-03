@@ -36,4 +36,12 @@ public class DetailViewModel extends AndroidViewModel {
         });
         return sellerLiveData;
     }
+
+    public LiveData<Boolean> isFavorite(String productId) {
+        return productRepository.isFavorite(productId);
+    }
+
+    public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {
+        productRepository.toggleFavorite(productId, isCurrentlyFavorite);
+    }
 }

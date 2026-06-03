@@ -16,9 +16,9 @@ public interface FavoriteDao {
     @Query("DELETE FROM favorites WHERE productId = :productId")
     void removeFavorite(String productId);
 
-    @Query("SELECT * FROM favorites")
-    LiveData<List<FavoriteEntity>> getAllFavorites();
-
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE productId = :productId)")
     LiveData<Boolean> isFavorite(String productId);
+
+    @Query("SELECT products.* FROM products INNER JOIN favorites ON products.id = favorites.productId ORDER BY products.timestamp DESC")
+    LiveData<List<ProductEntity>> getFavoriteProducts();
 }

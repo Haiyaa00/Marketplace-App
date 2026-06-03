@@ -2,19 +2,12 @@ package com.example.marketplace.data.local;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
-import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
-@Entity(
-        tableName = "favorites",
-        foreignKeys = @ForeignKey(
-                entity = ProductEntity.class,
-                parentColumns = "id",
-                childColumns = "productId",
-                onDelete = ForeignKey.CASCADE
-        )
-)
+// ĐÃ XÓA KHÓA NGOẠI (FOREIGN KEY) Ở ĐÂY ĐỂ TRÁNH LỖI CASCADE DELETE
+@Entity(tableName = "favorites")
 public class FavoriteEntity {
+
     @PrimaryKey
     @NonNull
     public String productId;

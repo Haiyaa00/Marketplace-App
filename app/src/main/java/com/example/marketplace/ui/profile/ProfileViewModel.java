@@ -34,8 +34,8 @@ public class ProfileViewModel extends AndroidViewModel {
         return currentUser;
     }
 
-    public LiveData<List<ProductEntity>> getMyProducts(String userId) {
-        return productRepository.getMyProducts(userId);
+    public LiveData<List<ProductEntity>> getFavoriteProducts() {
+        return productRepository.getFavoriteProducts();
     }
 
     public void logout() {

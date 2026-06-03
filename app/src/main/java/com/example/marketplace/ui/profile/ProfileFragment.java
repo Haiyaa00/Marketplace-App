@@ -61,23 +61,19 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        // TRUYỀN "TRUE" ĐỂ BẬT NÚT XÓA BÀI ĐĂNG TRÊN PROFILE
-        myProductAdapter = new ProductAdapter(true);
+        // Truyền false để ẨN icon thùng rác (Vì đây là danh sách yêu thích)
+        myProductAdapter = new ProductAdapter(false);
         binding.rvMyProducts.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         binding.rvMyProducts.setAdapter(myProductAdapter);
 
-        // 1. CLICK VÀO CARD SẢN PHẨM -> MỞ CHI TIẾT SẢN PHẨM [1]
+        // BẤM VÀO SẢN PHẨM YÊU THÍCH -> SANG MÀN DETAIL
         myProductAdapter.setOnProductClickListener(product -> {
-            // TODO: Mở ProductDetailActivity, truyền ID sản phẩm qua Intent
-            Toast.makeText(requireContext(), "Mở chi tiết sản phẩm: " + product.title, Toast.LENGTH_SHORT).show();
-            // Intent intent = new Intent(requireContext(), ProductDetailActivity.class);
-            // intent.putExtra("PRODUCT_ID", product.id);
-            // startActivity(intent);
+            Intent intent = new Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
+            intent.putExtra("PRODUCT_ID", product.id);
+            startActivity(intent);
         });
-
-        // 2. CLICK VÀO THÙNG RÁC ĐỎ -> HIỂN THỊ DIALOG XÁC NHẬN XÓA [1]
-        myProductAdapter.setOnDeleteClickListener(this::showDeleteProductDialog);
     }
+
 
     private void observeUserData() {
         viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
@@ -91,13 +87,13 @@ public class ProfileFragment extends Fragment {
                         .placeholder(android.R.drawable.sym_def_app_icon)
                         .into(binding.imgAvatar);
 
-                observeMyProducts(user.uid);
+                observeFavoriteProducts();
             }
         });
     }
 
-    private void observeMyProducts(String userId) {
-        viewModel.getMyProducts(userId).observe(getViewLifecycleOwner(), products -> {
+    private void observeFavoriteProducts() {
+        viewModel.getFavoriteProducts().observe(getViewLifecycleOwner(), products -> {
             if (products != null) {
                 myProductAdapter.submitList(products);
             }

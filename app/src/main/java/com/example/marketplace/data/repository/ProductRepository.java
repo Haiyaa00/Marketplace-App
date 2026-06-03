@@ -5,6 +5,7 @@ import android.app.Application;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.marketplace.data.local.FavoriteDao;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.example.marketplace.data.local.AppDatabase;
 import com.example.marketplace.data.local.ProductDao;
@@ -24,12 +25,14 @@ public class ProductRepository {
     private final FirebaseManager firebaseManager;
     private final ProductDao productDao;
     private final ExecutorService executor;
+    private final FavoriteDao favoriteDao;
 
     public ProductRepository(Application application) {
         this.firebaseManager = FirebaseManager.getInstance();
         AppDatabase db = AppDatabase.getInstance(application);
         this.productDao = db.productDao();
         this.executor = Executors.newFixedThreadPool(2);
+        this.favoriteDao = db.favoriteDao();
     }
 
     // ================== OFFLINE-FIRST READ ==================
@@ -129,5 +132,23 @@ public class ProductRepository {
             }
         });
         return result;
+    }
+
+    public LiveData<List<ProductEntity>> getFavoriteProducts() {
+        return favoriteDao.getFavoriteProducts();
+    }
+
+    public LiveData<Boolean> isFavorite(String productId) {
+        return favoriteDao.isFavorite(productId);
+    }
+
+    public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {
+        executor.execute(() -> {
+            if (isCurrentlyFavorite) {
+                favoriteDao.removeFavorite(productId);
+            } else {
+                favoriteDao.insertFavorite(new com.example.marketplace.data.local.FavoriteEntity(productId));
+            }
+        });
     }
 }
