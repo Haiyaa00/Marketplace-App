@@ -21,4 +21,10 @@ public interface FavoriteDao {
 
     @Query("SELECT products.* FROM products INNER JOIN favorites ON products.id = favorites.productId ORDER BY products.timestamp DESC")
     LiveData<List<ProductEntity>> getFavoriteProducts();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertFavorites(List<FavoriteEntity> favorites);
+
+    @Query("DELETE FROM favorites")
+    void clearFavorites();
 }

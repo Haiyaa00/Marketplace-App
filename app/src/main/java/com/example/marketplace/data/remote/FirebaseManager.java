@@ -58,6 +58,10 @@ public class FirebaseManager {
         return auth.createUserWithEmailAndPassword(email, password);
     }
 
+    public Task<Void> sendPasswordResetEmail(String email) {
+        return auth.sendPasswordResetEmail(email);
+    }
+
     public FirebaseUser getCurrentFirebaseUser() {
         return auth.getCurrentUser();
     }
@@ -145,5 +149,23 @@ public class FirebaseManager {
     // Lấy Collection Reference để gắn Listener lắng nghe tin nhắn mới
     public com.google.firebase.firestore.CollectionReference getMessagesReference(String chatRoomId) {
         return db.collection("ChatRooms").document(chatRoomId).collection("Messages");
+    }
+
+    public com.google.android.gms.tasks.Task<Void> addFavorite(String userId, String productId) {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("userId", userId);
+        data.put("productId", productId);
+        // Lưu với ID là "UID_ProductID" để tránh trùng lặp
+        return db.collection("Favorites").document(userId + "_" + productId).set(data);
+    }
+
+    // Xóa 1 sản phẩm khỏi danh sách yêu thích trên Cloud
+    public com.google.android.gms.tasks.Task<Void> removeFavorite(String userId, String productId) {
+        return db.collection("Favorites").document(userId + "_" + productId).delete();
+    }
+
+    // Lấy toàn bộ danh sách yêu thích của 1 User
+    public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> getUserFavorites(String userId) {
+        return db.collection("Favorites").whereEqualTo("userId", userId).get();
     }
 }

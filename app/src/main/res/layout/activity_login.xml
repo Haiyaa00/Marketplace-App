@@ -43,7 +43,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvWelcomeMessage" />
 
-    <!-- Floating Card (Sửa width thành 0dp để nhận margin) -->
+    <!-- Floating Card -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardLogin"
         android:layout_width="0dp"
@@ -85,7 +85,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-            <!-- Ô nhập Email (Đã xóa paddingStart) -->
+            <!-- Ô nhập Email -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEmail"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -106,7 +106,7 @@
                     android:inputType="textEmailAddress" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Ô nhập Password (Đã xóa paddingStart) -->
+            <!-- Ô nhập Password -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilPassword"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -128,19 +128,32 @@
                     android:inputType="textPassword" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Quên mật khẩu? -->
+            <TextView
+                android:id="@+id/tvForgotPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Quên mật khẩu?"
+                android:textColor="@color/ocean_blue_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+
             <!-- Nút Đăng nhập -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="16dp"
                 android:text="Đăng Nhập"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 app:backgroundTint="@color/ocean_blue_primary"
                 app:cornerRadius="16dp"
-                app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+                app:layout_constraintTop_toBottomOf="@id/tvForgotPassword" />
 
             <!-- ProgressBar Loading -->
             <ProgressBar

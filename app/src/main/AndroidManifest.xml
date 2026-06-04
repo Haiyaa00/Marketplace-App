@@ -42,6 +42,10 @@
 
         <activity android:name=".ui.chat.ChatActivity" />
 
+        <activity android:name=".ui.auth.ForgotPasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 
 </manifest>

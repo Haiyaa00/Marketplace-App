@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.marketplace.data.local.FavoriteDao;
+import com.example.marketplace.data.local.FavoriteEntity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.example.marketplace.data.local.AppDatabase;
 import com.example.marketplace.data.local.ProductDao;
@@ -85,6 +87,9 @@ public class ProductRepository {
                     productDao.insertProducts(DataMapper.mapToProductEntityList(fetchedProducts));
                     result.postValue(Resource.success(null));
                 });
+
+                syncFavorites();
+
             } else {
                 result.setValue(Resource.error(task.getException() != null ?
                         task.getException().getMessage() : "Failed to fetch products", null));
@@ -143,12 +148,43 @@ public class ProductRepository {
     }
 
     public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {
+        // Lấy UID của user đang đăng nhập
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
         executor.execute(() -> {
             if (isCurrentlyFavorite) {
+                // Xóa cục bộ (UI mất tim ngay lập tức)
                 favoriteDao.removeFavorite(productId);
+                // Xóa trên Cloud
+                firebaseManager.removeFavorite(userId, productId);
             } else {
-                favoriteDao.insertFavorite(new com.example.marketplace.data.local.FavoriteEntity(productId));
+                // Thêm cục bộ (UI hiện tim ngay lập tức)
+                favoriteDao.insertFavorite(new FavoriteEntity(productId));
+                // Thêm trên Cloud
+                firebaseManager.addFavorite(userId, productId);
             }
+        });
+    }
+
+    public void syncFavorites() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        firebaseManager.getUserFavorites(userId).addOnSuccessListener(snapshots -> {
+            List<FavoriteEntity> favList = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                String pId = doc.getString("productId");
+                if (pId != null) {
+                    favList.add(new FavoriteEntity(pId));
+                }
+            }
+
+            // Xóa danh sách cũ cục bộ và nạp danh sách mới từ Cloud vào
+            executor.execute(() -> {
+                favoriteDao.clearFavorites();
+                favoriteDao.insertFavorites(favList);
+            });
         });
     }
 }

@@ -231,26 +231,6 @@ public class ProfileFragment extends Fragment {
         dialog.show();
     }
 
-    private void showDeleteProductDialog(ProductEntity product) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Xóa bài đăng")
-                .setMessage("Bạn có chắc chắn muốn xóa sản phẩm:\n\"" + product.title + "\"?\nHành động này không thể hoàn tác.")
-                .setPositiveButton("Xóa bài", (dialog, which) -> {
-                    viewModel.deleteProduct(product.id).observe(getViewLifecycleOwner(), resource -> {
-                        switch (resource.status) {
-                            case SUCCESS:
-                                Toast.makeText(requireContext(), "Đã xóa bài đăng thành công!", Toast.LENGTH_SHORT).show();
-                                break;
-                            case ERROR:
-                                Toast.makeText(requireContext(), "Lỗi khi xóa: " + resource.message, Toast.LENGTH_SHORT).show();
-                                break;
-                        }
-                    });
-                })
-                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
-                .show();
-    }
-
     private void showLogoutConfirmDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Đăng xuất")
