@@ -6,7 +6,7 @@
     android:paddingHorizontal="16dp"
     android:paddingVertical="4dp">
 
-    <!-- TIN NHẮN ĐỐI PHƯƠNG GỬI ĐẾN (BÊN TRÁI - MÀU XÁM) -->
+    <!-- TIN NHẮN NHẬN (BÊN TRÁI - XÁM) -->
     <LinearLayout
         android:id="@+id/layoutReceive"
         android:layout_width="wrap_content"
@@ -24,19 +24,44 @@
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/tvReceiveText"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="10dp"
-                android:text="Tin nhắn đến..."
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
+                android:orientation="vertical">
+
+                <!-- Ảnh Gửi Đến -->
+                <ImageView
+                    android:id="@+id/ivReceiveImage"
+                    android:layout_width="200dp"
+                    android:layout_height="250dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <!-- Chữ Gửi Đến -->
+                <TextView
+                    android:id="@+id/tvReceiveText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Thời gian nhận -->
+        <TextView
+            android:id="@+id/tvReceiveTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:00"
+            android:textSize="11sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="2dp"/>
     </LinearLayout>
 
-    <!-- TIN NHẮN MÌNH GỬI ĐI (BÊN PHẢI - MÀU XANH) -->
+    <!-- TIN NHẮN GỬI ĐI (BÊN PHẢI - XANH) -->
     <LinearLayout
         android:id="@+id/layoutSend"
         android:layout_width="wrap_content"
@@ -44,6 +69,7 @@
         android:layout_alignParentEnd="true"
         android:layout_marginStart="60dp"
         android:orientation="vertical"
+        android:gravity="end"
         android:visibility="visible">
 
         <com.google.android.material.card.MaterialCardView
@@ -54,16 +80,41 @@
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/tvSendText"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="10dp"
-                android:text="Tin nhắn gửi đi..."
-                android:textColor="#FFFFFF"
-                android:textSize="15sp" />
+                android:orientation="vertical">
+
+                <!-- Ảnh Mình Gửi -->
+                <ImageView
+                    android:id="@+id/ivSendImage"
+                    android:layout_width="200dp"
+                    android:layout_height="250dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <!-- Chữ Mình Gửi -->
+                <TextView
+                    android:id="@+id/tvSendText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Thời gian gửi -->
+        <TextView
+            android:id="@+id/tvSendTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:00"
+            android:textSize="11sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginEnd="4dp"
+            android:layout_marginTop="2dp"/>
     </LinearLayout>
 
 </RelativeLayout>
