@@ -36,4 +36,9 @@ public interface ProductDao {
 
     @Query("SELECT * FROM products WHERE id = :productId LIMIT 1")
     LiveData<ProductEntity> getProductById(String productId);
+
+    // Lệnh SQL thông minh: Lọc từ khóa (Tên/Mô tả) VÀ Lọc Danh mục (Nếu category rỗng thì lấy tất cả)
+    @Query("SELECT * FROM products WHERE (title LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') " +
+            "AND (:category = '' OR category = :category) ORDER BY timestamp DESC")
+    LiveData<List<ProductEntity>> searchAndFilterProducts(String searchQuery, String category);
 }

@@ -34,4 +34,8 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<Resource<Void>> refreshProducts() {
         return repository.refreshProducts();
     }
+
+    public LiveData<List<ProductEntity>> searchProducts(String query) {
+        return repository.searchProductsLocally(query);
+    }
 }

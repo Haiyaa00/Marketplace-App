@@ -25,12 +25,29 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
     @Override
     public void onBindViewHolder(@NonNull CategoryViewHolder holder, int position) {
-        holder.bind(categories.get(position));
+        Category category = categories.get(position);
+        holder.bind(category);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onCategoryClick(category.getName());
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return categories.size();
+    }
+
+    public interface OnCategoryClickListener {
+        void onCategoryClick(String categoryName);
+    }
+
+    private OnCategoryClickListener listener;
+
+    public void setOnCategoryClickListener(OnCategoryClickListener listener) {
+        this.listener = listener;
     }
 
     static class CategoryViewHolder extends RecyclerView.ViewHolder {

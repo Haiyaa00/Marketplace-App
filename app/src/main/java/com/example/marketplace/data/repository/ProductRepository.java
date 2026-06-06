@@ -55,6 +55,10 @@ public class ProductRepository {
         return productDao.getProductById(productId);
     }
 
+    public LiveData<List<ProductEntity>> searchAndFilterProducts(String query, String category) {
+        return productDao.searchAndFilterProducts(query, category);
+    }
+
     public void incrementViewCount(String productId) {
         // Tăng view trên Firestore (Bảo mật: Atomic operation)
         firebaseManager.getDb().collection("Products").document(productId)
