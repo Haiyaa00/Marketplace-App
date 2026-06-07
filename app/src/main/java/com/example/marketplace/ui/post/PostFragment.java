@@ -107,8 +107,9 @@ public class PostFragment extends Fragment {
     }
 
     private void setupDropdownMenu() {
-        String[] categories = new String[]{"Giáo trình", "Phòng trọ", "Điện tử", "Đồ gia dụng", "Khác"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
+        // Lấy danh sách tự động từ Nguồn chân lý duy nhất (Single Source of Truth)
+        String[] categories = com.example.marketplace.utils.CategoryHelper.getCategoryNames();
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         binding.actCategory.setAdapter(adapter);
     }
 
@@ -249,7 +250,7 @@ public class PostFragment extends Fragment {
         managePostAdapter = new ManagePostAdapter(new ManagePostAdapter.OnPostActionListener() {
             @Override
             public void onEdit(ProductEntity product) {
-                // CHUYỂN SANG MÀN HÌNH EDIT MỚI HOÀN TOÀN
+                // MỞ MÀN HÌNH EDIT RIÊNG BIỆT
                 android.content.Intent intent = new android.content.Intent(requireContext(), EditPostActivity.class);
                 intent.putExtra("PRODUCT_ID", product.id);
                 startActivity(intent);
@@ -259,9 +260,15 @@ public class PostFragment extends Fragment {
             public void onDelete(ProductEntity product) {
                 showDeleteConfirmDialog(product);
             }
+            @Override
+            public void onDetailClick(ProductEntity product) {
+                android.content.Intent intent = new android.content.Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
+                intent.putExtra("PRODUCT_ID", product.id);
+                startActivity(intent);
+            }
         });
 
-        binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvMyPosts.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext()));
         binding.rvMyPosts.setAdapter(managePostAdapter);
     }
 

@@ -55,9 +55,8 @@ public class SearchFragment extends Fragment {
         setupRecyclerView();
         setupSortSpinner();
         setupListeners();
-
-        // Gọi tìm kiếm lần đầu (lấy toàn bộ)
         performSearch();
+        setupCategoryChips();
     }
 
     private void setupRecyclerView() {
@@ -134,6 +133,20 @@ public class SearchFragment extends Fragment {
                 binding.tvResultCount.setText("Có " + sortedList.size() + " kết quả");
             }
         });
+    }
+
+    private void setupCategoryChips() {
+        // Lấy danh sách tên từ CategoryHelper
+        String[] categories = com.example.marketplace.utils.CategoryHelper.getCategoryNames();
+
+        for (String categoryName : categories) {
+            // "Bơm" file mẫu item_chip_category.xml vào ChipGroup
+            com.google.android.material.chip.Chip chip = (com.google.android.material.chip.Chip) getLayoutInflater()
+                    .inflate(com.example.marketplace.R.layout.item_chip_category, binding.chipGroupCategory, false);
+
+            chip.setText(categoryName);
+            binding.chipGroupCategory.addView(chip);
+        }
     }
 
     @Override

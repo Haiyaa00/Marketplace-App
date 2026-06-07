@@ -157,9 +157,8 @@ public class EditPostActivity extends AppCompatActivity {
     }
 
     private void setupDropdownMenu() {
-        String[] categories = new String[]{"Giáo trình", "Phòng trọ", "Điện tử", "Đồ gia dụng", "Khác"};
-        // Đã sửa requireContext() thành this
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, categories);
+        String[] categories = com.example.marketplace.utils.CategoryHelper.getCategoryNames();
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, categories);
         binding.actCategory.setAdapter(adapter);
     }
 

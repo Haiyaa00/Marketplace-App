@@ -16,6 +16,7 @@ public class ManagePostAdapter extends ListAdapter<ProductEntity, ManagePostAdap
     public interface OnPostActionListener {
         void onEdit(ProductEntity product);
         void onDelete(ProductEntity product);
+        void onDetailClick(ProductEntity product);
     }
 
     private final OnPostActionListener listener;
@@ -58,17 +59,25 @@ public class ManagePostAdapter extends ListAdapter<ProductEntity, ManagePostAdap
 
         public void bind(ProductEntity product, OnPostActionListener listener) {
             binding.tvTitle.setText(product.title);
-            binding.tvViews.setText(product.viewCount + " lượt xem");
+            binding.tvViews.setText(product.viewCount + " lượt xem"); // Con mắt vẫn giữ nguyên ở đây
 
-            DecimalFormat formatter = new DecimalFormat("#,###");
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,###");
             binding.tvPrice.setText(formatter.format(product.price) + " đ");
 
             if (product.imageUrls != null && !product.imageUrls.isEmpty()) {
-                Glide.with(itemView.getContext()).load(product.imageUrls.get(0)).into(binding.ivThumb);
+                com.bumptech.glide.Glide.with(itemView.getContext()).load(product.imageUrls.get(0)).into(binding.ivThumb);
             }
 
+            // Gán sự kiện Sửa / Xóa cũ
             binding.btnEdit.setOnClickListener(v -> listener.onEdit(product));
             binding.btnDelete.setOnClickListener(v -> listener.onDelete(product));
+
+            // 2. MỚI THÊM: GÁN SỰ KIỆN CLICK CHO TOÀN BỘ ITEM ĐỂ XEM CHI TIẾT
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onDetailClick(product);
+                }
+            });
         }
     }
 }

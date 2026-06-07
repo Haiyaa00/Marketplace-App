@@ -57,34 +57,14 @@
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <RelativeLayout
+                <TextView
+                    android:id="@+id/tvProductCategory"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:id="@+id/tvProductCategory"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_toStartOf="@id/tvViewCount"
-                        android:text="Danh mục • Thời gian"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
-
-                    <!-- Hiển thị Lượt xem (Icon con mắt) -->
-                    <TextView
-                        android:id="@+id/tvViewCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:text="0"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        app:drawableStartCompat="@android:drawable/ic_menu_view"
-                        app:drawableTint="@color/text_secondary"
-                        android:drawablePadding="4dp"/>
-                </RelativeLayout>
+                    android:layout_marginTop="8dp"
+                    android:text="Danh mục • Thời gian"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
 

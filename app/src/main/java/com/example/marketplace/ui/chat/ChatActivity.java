@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,10 +45,11 @@ public class ChatActivity extends AppCompatActivity {
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
     // Bộ xử lý khi người dùng chọn ảnh
-    private final ActivityResultLauncher<String> pickImageLauncher =
-            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
-                if (uri != null) {
-                    uploadAndSendImage(uri);
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickMultipleImagesLauncher =
+            registerForActivityResult(new ActivityResultContracts.PickMultipleVisualMedia(5), uris -> {
+                if (uris != null && !uris.isEmpty()) {
+                    // Không cần code cắt mảng nữa, vì Android đã lo việc khóa giới hạn 5 ảnh rồi!
+                    uploadAndSendMultipleImages(uris);
                 }
             });
 
@@ -79,7 +81,11 @@ public class ChatActivity extends AppCompatActivity {
         binding.btnSend.setOnClickListener(v -> sendTextMessage());
 
         // Nút gửi Ảnh
-        binding.btnAttachImage.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
+        binding.btnAttachImage.setOnClickListener(v -> {
+            pickMultipleImagesLauncher.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                    .build());
+        });
     }
 
     private void setupRecyclerView() {
@@ -104,26 +110,45 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     // ================= GỬI TIN NHẮN HÌNH ẢNH =================
-    private void uploadAndSendImage(Uri imageUri) {
-        Toast.makeText(this, "Đang gửi ảnh...", Toast.LENGTH_SHORT).show();
-        binding.btnAttachImage.setEnabled(false); // Khóa nút ảnh tạm thời
+    private void uploadAndSendMultipleImages(java.util.List<Uri> imageUris) {
+        Toast.makeText(this, "Đang gửi " + imageUris.size() + " ảnh...", Toast.LENGTH_SHORT).show();
+        binding.btnAttachImage.setEnabled(false); // Khóa nút bấm tạm thời
 
-        // Nén ảnh
-        Uri compressedUri = ImageUtils.compressImage(this, imageUri);
+        // Biến mảng 1 phần tử dùng để đếm số ảnh đã xử lý xong (Tránh lỗi trong Lambda)
+        final int[] processedCount = {0};
 
-        // Đẩy lên Cloudinary
-        CloudinaryManager.getInstance().uploadImage(this, compressedUri).addOnCompleteListener(task -> {
-            binding.btnAttachImage.setEnabled(true);
-            if (task.isSuccessful() && task.getResult() != null) {
-                String uploadedImageUrl = task.getResult();
+        for (int i = 0; i < imageUris.size(); i++) {
+            Uri imageUri = imageUris.get(i);
 
-                // Gửi Firebase: Có imageUrl, text để thông báo tóm tắt "[Hình ảnh]"
-                Message message = new Message(currentUserId, "[Hình ảnh]", uploadedImageUrl, System.currentTimeMillis());
-                firebaseManager.sendMessage(chatRoomId, currentUserId, partnerId, message);
-            } else {
-                Toast.makeText(this, "Lỗi gửi ảnh!", Toast.LENGTH_SHORT).show();
-            }
-        });
+            // 1. Nén từng ảnh
+            Uri compressedUri = ImageUtils.compressImage(this, imageUri);
+
+            // Lưu lại index để cộng vào timestamp chống trùng lặp ID
+            final int indexOffset = i;
+
+            // 2. Đẩy lên Cloudinary chạy song song (Concurrent)
+            CloudinaryManager.getInstance().uploadImage(this, compressedUri).addOnCompleteListener(task -> {
+                processedCount[0]++; // Tăng biến đếm khi 1 ảnh upload xong (dù thành công hay lỗi)
+
+                if (task.isSuccessful() && task.getResult() != null) {
+                    String uploadedImageUrl = task.getResult();
+
+                    // MA THUẬT CHỐNG GHI ĐÈ: Cộng thêm indexOffset vào timestamp
+                    // Giúp các bức ảnh dù upload xong cùng 1 miligiây cũng không bị trùng ID trên Firestore
+                    long uniqueTimestamp = System.currentTimeMillis() + indexOffset;
+
+                    Message message = new Message(currentUserId, "[Hình ảnh]", uploadedImageUrl, uniqueTimestamp);
+                    firebaseManager.sendMessage(chatRoomId, currentUserId, partnerId, message);
+                } else {
+                    Toast.makeText(this, "Lỗi gửi ảnh thứ " + (indexOffset + 1), Toast.LENGTH_SHORT).show();
+                }
+
+                // 3. Khi tất cả ảnh đã xử lý xong thì mở khóa nút chọn ảnh
+                if (processedCount[0] == imageUris.size()) {
+                    binding.btnAttachImage.setEnabled(true);
+                }
+            });
+        }
     }
 
     // ================= LẮNG NGHE REALTIME =================
@@ -173,20 +198,42 @@ public class ChatActivity extends AppCompatActivity {
             Message message = messageList.get(position);
             String formattedTime = timeFormat.format(new Date(message.getTimestamp()));
 
-            // KIỂM TRA MÌNH GỬI HAY ĐỐI PHƯƠNG GỬI
+            // ================= LOGIC NHÃN NGÀY THÁNG THÔNG MINH =================
+            boolean showDateHeader = false;
+
+            if (position == 0) {
+                // Tin nhắn đầu tiên trên cùng luôn luôn hiển thị Nhãn ngày
+                showDateHeader = true;
+            } else {
+                // So sánh tin nhắn hiện tại với tin nhắn ngay trên nó (position - 1)
+                Message previousMessage = messageList.get(position - 1);
+
+                // Nếu 2 tin nhắn KHÁC NGÀY NHAU -> Hiển thị Nhãn để ngăn cách
+                if (!com.example.marketplace.utils.DateUtils.isSameDay(previousMessage.getTimestamp(), message.getTimestamp())) {
+                    showDateHeader = true;
+                }
+            }
+
+            // Gán chữ và ẩn/hiện cục Nhãn
+            if (showDateHeader) {
+                holder.binding.cardDateHeader.setVisibility(View.VISIBLE);
+                holder.binding.tvDateHeader.setText(com.example.marketplace.utils.DateUtils.getChatDateLabel(message.getTimestamp()));
+            } else {
+                holder.binding.cardDateHeader.setVisibility(View.GONE);
+            }
+            // ===================================================================
+
+            // KIỂM TRA MÌNH GỬI HAY ĐỐI PHƯƠNG GỬI (Phần này giữ nguyên của bạn)
             if (message.getSenderId().equals(currentUserId)) {
                 holder.binding.layoutSend.setVisibility(View.VISIBLE);
                 holder.binding.layoutReceive.setVisibility(View.GONE);
+                holder.binding.tvSendTime.setText(formattedTime);
 
-                holder.binding.tvSendTime.setText(formattedTime); // Nhãn thời gian
-
-                // Xử lý nếu là Ảnh
                 if (message.getImageUrl() != null && !message.getImageUrl().isEmpty()) {
                     holder.binding.ivSendImage.setVisibility(View.VISIBLE);
-                    holder.binding.tvSendText.setVisibility(View.GONE); // Ẩn chữ "[Hình ảnh]"
+                    holder.binding.tvSendText.setVisibility(View.GONE);
                     Glide.with(holder.itemView.getContext()).load(message.getImageUrl()).into(holder.binding.ivSendImage);
                 } else {
-                    // Nếu là Chữ
                     holder.binding.ivSendImage.setVisibility(View.GONE);
                     holder.binding.tvSendText.setVisibility(View.VISIBLE);
                     holder.binding.tvSendText.setText(message.getText());
@@ -194,16 +241,13 @@ public class ChatActivity extends AppCompatActivity {
             } else {
                 holder.binding.layoutReceive.setVisibility(View.VISIBLE);
                 holder.binding.layoutSend.setVisibility(View.GONE);
+                holder.binding.tvReceiveTime.setText(formattedTime);
 
-                holder.binding.tvReceiveTime.setText(formattedTime); // Nhãn thời gian
-
-                // Xử lý nếu là Ảnh
                 if (message.getImageUrl() != null && !message.getImageUrl().isEmpty()) {
                     holder.binding.ivReceiveImage.setVisibility(View.VISIBLE);
                     holder.binding.tvReceiveText.setVisibility(View.GONE);
                     Glide.with(holder.itemView.getContext()).load(message.getImageUrl()).into(holder.binding.ivReceiveImage);
                 } else {
-                    // Nếu là Chữ
                     holder.binding.ivReceiveImage.setVisibility(View.GONE);
                     holder.binding.tvReceiveText.setVisibility(View.VISIBLE);
                     holder.binding.tvReceiveText.setText(message.getText());

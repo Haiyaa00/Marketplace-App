@@ -38,6 +38,9 @@ public class HomeFragment extends Fragment {
     // Biến dùng để quản lý luồng dữ liệu, giúp chuyển đổi mượt mà giữa "Tất cả" và "Tìm kiếm"
     private LiveData<List<ProductEntity>> currentProductsLiveData;
 
+    private android.os.Handler sliderHandler = new android.os.Handler();
+    private List<String> bannerList;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
@@ -47,14 +50,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
-
-        // Load banner image
-        Glide.with(this)
-                .load("https://img.freepik.com/premium-vector/online-marketplace-concept-people-buying-selling-online-store-flat-illustration_18660-3183.jpg")
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .into(binding.imgBanner);
 
         setupRecyclerViews();
         setupSwipeRefresh();
@@ -65,15 +61,14 @@ public class HomeFragment extends Fragment {
 
         // Gọi load data từ mạng về (Chạy ngầm)
         triggerRefresh();
+        setupBanner();
     }
 
     private void setupRecyclerViews() {
         // 1. SETUP DANH MỤC
-        List<com.example.marketplace.model.Category> mockCategories = new ArrayList<>();
-        mockCategories.add(new com.example.marketplace.model.Category("Sách", android.R.drawable.ic_menu_agenda));
-        mockCategories.add(new com.example.marketplace.model.Category("Điện tử", android.R.drawable.ic_menu_slideshow));
-        mockCategories.add(new com.example.marketplace.model.Category("Đồ gia dụng", android.R.drawable.ic_menu_gallery));
-        mockCategories.add(new com.example.marketplace.model.Category("Khác", android.R.drawable.ic_menu_preferences));
+        java.util.List<com.example.marketplace.model.Category> categoryList = com.example.marketplace.utils.CategoryHelper.getCategories();
+
+        categoryAdapter = new CategoryAdapter(categoryList);
 
         binding.edtSearch.setFocusable(false); // Không cho bàn phím bật lên ở màn Home
         binding.edtSearch.setClickable(true);
@@ -116,8 +111,88 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // MA THUẬT KIẾN TRÚC: Quản lý Observer thông minh chống rò rỉ RAM
-    private void observeData(LiveData<List<ProductEntity>> newLiveData) {
+    private void setupBanner() {
+        // 1. Tạo danh sách ảnh Banner (Bạn có thể lấy các link ảnh từ Firebase, ở đây tôi giả lập 3 ảnh)
+        bannerList = new java.util.ArrayList<>();
+        bannerList.add("https://img.freepik.com/premium-vector/online-shopping-concept-with-3d-elements-landing-page_108061-689.jpg");
+        bannerList.add("https://img.freepik.com/free-vector/gradient-sale-background_23-2148906371.jpg");
+        bannerList.add("https://img.freepik.com/free-vector/flat-sale-banner-with-photo_23-2149026968.jpg");
+
+        BannerAdapter bannerAdapter = new BannerAdapter(bannerList);
+        binding.viewPagerBanner.setAdapter(bannerAdapter);
+
+        // Đặt Vị trí bắt đầu ở giữa để có thể vuốt sang trái/phải ngay lập tức
+        binding.viewPagerBanner.setCurrentItem(bannerList.size() * 1000, false);
+
+        setupDotsIndicator();
+
+        // 2. Thêm hiệu ứng lật trang (Zoom Out) mượt mà
+        binding.viewPagerBanner.setPageTransformer((page, position) -> {
+            float r = 1 - Math.abs(position);
+            page.setScaleY(0.85f + r * 0.15f); // Hiệu ứng thu nhỏ ảnh hai bên
+        });
+
+        binding.viewPagerBanner.registerOnPageChangeCallback(new androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                updateDots(position % bannerList.size());
+
+                // Reset lại bộ đếm thời gian khi người dùng tự vuốt tay
+                sliderHandler.removeCallbacks(sliderRunnable);
+                sliderHandler.postDelayed(sliderRunnable, 3000); // 3 giây trượt 1 lần
+            }
+        });
+    }
+
+    private final Runnable sliderRunnable = new Runnable() {
+        @Override
+        public void run() {
+            binding.viewPagerBanner.setCurrentItem(binding.viewPagerBanner.getCurrentItem() + 1);
+        }
+    };
+
+    // Tạo các chấm tròn bên dưới
+    private void setupDotsIndicator() {
+        android.widget.ImageView[] dots = new android.widget.ImageView[bannerList.size()];
+        android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(8, 0, 8, 0);
+
+        for (int i = 0; i < dots.length; i++) {
+            dots[i] = new android.widget.ImageView(requireContext());
+            dots[i].setImageResource(android.R.drawable.presence_invisible); // Dấu chấm xám
+            dots[i].setLayoutParams(params);
+            binding.layoutDots.addView(dots[i]);
+        }
+    }
+
+    // Cập nhật chấm tròn sáng lên khi lật trang
+    private void updateDots(int currentPosition) {
+        int childCount = binding.layoutDots.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            android.widget.ImageView imageView = (android.widget.ImageView) binding.layoutDots.getChildAt(i);
+            if (i == currentPosition) {
+                imageView.setImageResource(android.R.drawable.presence_online); // Dấu chấm sáng (Xanh/Trắng)
+            } else {
+                imageView.setImageResource(android.R.drawable.presence_invisible); // Dấu chấm xám
+            }
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        sliderHandler.removeCallbacks(sliderRunnable); // Tắt động cơ khi thoát app ra nền
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        sliderHandler.postDelayed(sliderRunnable, 3000); // Bật lại động cơ khi vào lại app
+    }
+
+        private void observeData(LiveData<List<ProductEntity>> newLiveData) {
         // Gỡ bỏ người lắng nghe cũ (để tránh 2 luồng dữ liệu đè nhau gây lag)
         if (currentProductsLiveData != null) {
             currentProductsLiveData.removeObservers(getViewLifecycleOwner());
