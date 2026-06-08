@@ -48,7 +48,7 @@
             android:clickable="true"
             android:focusable="true"
             android:padding="8dp"
-            android:src="@android:drawable/btn_star_big_off" />
+            android:src="@drawable/ic_heart_off" />
     </RelativeLayout>
 
     <!-- Phần cuộn nội dung -->
@@ -138,7 +138,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
-                        android:src="@android:drawable/btn_star_big_off" />
+                        android:src="@drawable/ic_heart_off" />
                 </RelativeLayout>
 
                 <!-- Dòng chứa Danh mục và Thời gian -->

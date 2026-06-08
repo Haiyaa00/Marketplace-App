@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
+import com.example.marketplace.R;
 import com.example.marketplace.databinding.ActivityProductDetailBinding;
 import com.example.marketplace.model.User;
 
@@ -167,12 +168,12 @@ public class ProductDetailActivity extends AppCompatActivity {
             // Đổi icon cho CẢ 2 NÚT cùng 1 lúc để giao diện đồng bộ
             if (isCurrentlyFavorite) {
                 // Đang yêu thích -> Chuyển thành icon Bật (Màu đỏ/Sáng)
-                binding.btnFavoriteTop.setImageResource(android.R.drawable.btn_star_big_on);
-                binding.btnFavoriteMain.setImageResource(android.R.drawable.btn_star_big_on);
+                binding.btnFavoriteTop.setImageResource(R.drawable.ic_heart);
+                binding.btnFavoriteMain.setImageResource(R.drawable.ic_heart);
             } else {
                 // Không yêu thích -> Chuyển thành icon Tắt (Màu xám/Tối)
-                binding.btnFavoriteTop.setImageResource(android.R.drawable.btn_star_big_off);
-                binding.btnFavoriteMain.setImageResource(android.R.drawable.btn_star_big_off);
+                binding.btnFavoriteTop.setImageResource(R.drawable.ic_heart_off);
+                binding.btnFavoriteMain.setImageResource(R.drawable.ic_heart_off);
             }
         });
     }
