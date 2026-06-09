@@ -2,6 +2,8 @@ package com.example.marketplace.ui.post;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,8 +27,11 @@ import com.example.marketplace.model.Product;
 import com.example.marketplace.utils.AddressParser;
 import com.example.marketplace.utils.Resource;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class PostFragment extends Fragment {
 
@@ -133,6 +138,51 @@ public class PostFragment extends Fragment {
 
     private void setupListeners() {
         binding.btnPost.setOnClickListener(v -> attemptPostProduct());
+
+        // Định dạng giá tiền tự động khi nhập (VD: 1.000.000)
+        binding.edtPrice.addTextChangedListener(new TextWatcher() {
+            private String current = "";
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().equals(current)) {
+                    binding.edtPrice.removeTextChangedListener(this);
+
+                    // Loại bỏ tất cả ký tự không phải số
+                    String cleanString = s.toString().replaceAll("[^\\d]", "");
+
+                    if (!cleanString.isEmpty()) {
+                        try {
+                            double parsed = Double.parseDouble(cleanString);
+                            
+                            // Sử dụng dấu "." làm dấu phân cách hàng nghìn theo chuẩn Việt Nam
+                            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                            symbols.setGroupingSeparator('.');
+                            DecimalFormat formatter = new DecimalFormat("#,###", symbols);
+                            
+                            String formatted = formatter.format(parsed);
+
+                            current = formatted;
+                            binding.edtPrice.setText(formatted);
+                            binding.edtPrice.setSelection(formatted.length());
+                        } catch (NumberFormatException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        current = "";
+                        binding.edtPrice.setText("");
+                    }
+
+                    binding.edtPrice.addTextChangedListener(this);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
     }
 
     private void attemptPostProduct() {
@@ -172,7 +222,8 @@ public class PostFragment extends Fragment {
             binding.tilContactPhone.setError(null);
         }
 
-        double price = Double.parseDouble(priceStr);
+        // Loại bỏ dấu phân cách (dấu chấm) trước khi parse sang double
+        double price = Double.parseDouble(priceStr.replaceAll("[^\\d]", ""));
         showLoading(true);
 
         // Upload ảnh lên mạng trước (Do màn này giờ chỉ là màn TẠO MỚI)
