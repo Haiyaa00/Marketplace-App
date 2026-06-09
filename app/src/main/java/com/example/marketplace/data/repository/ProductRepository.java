@@ -143,29 +143,24 @@ public class ProductRepository {
         return result;
     }
 
-    public LiveData<List<ProductEntity>> getFavoriteProducts() {
-        return favoriteDao.getFavoriteProducts();
+    public LiveData<List<ProductEntity>> getFavoriteProducts(String userId) {
+        return favoriteDao.getFavoriteProducts(userId);
     }
 
-    public LiveData<Boolean> isFavorite(String productId) {
-        return favoriteDao.isFavorite(productId);
+    public LiveData<Boolean> isFavorite(String userId, String productId) {
+        return favoriteDao.isFavorite(userId, productId);
     }
 
     public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {
-        // Lấy UID của user đang đăng nhập
         if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         executor.execute(() -> {
             if (isCurrentlyFavorite) {
-                // Xóa cục bộ (UI mất tim ngay lập tức)
-                favoriteDao.removeFavorite(productId);
-                // Xóa trên Cloud
+                favoriteDao.removeFavorite(userId, productId);
                 firebaseManager.removeFavorite(userId, productId);
             } else {
-                // Thêm cục bộ (UI hiện tim ngay lập tức)
-                favoriteDao.insertFavorite(new FavoriteEntity(productId));
-                // Thêm trên Cloud
+                favoriteDao.insertFavorite(new FavoriteEntity(userId, productId));
                 firebaseManager.addFavorite(userId, productId);
             }
         });
@@ -180,12 +175,11 @@ public class ProductRepository {
             for (DocumentSnapshot doc : snapshots.getDocuments()) {
                 String pId = doc.getString("productId");
                 if (pId != null) {
-                    favList.add(new FavoriteEntity(pId));
+                    favList.add(new FavoriteEntity(userId, pId)); // Truyền thêm userId
                 }
             }
-
-            // Xóa danh sách cũ cục bộ và nạp danh sách mới từ Cloud vào
             executor.execute(() -> {
+                // Tùy chọn: Bạn có thể chỉ xóa favorite của user hiện tại để người khác login không bị tải lại từ đầu
                 favoriteDao.clearFavorites();
                 favoriteDao.insertFavorites(favList);
             });

@@ -14,6 +14,7 @@ import com.example.marketplace.data.remote.CloudinaryManager;
 import com.example.marketplace.data.repository.AuthRepository;
 import com.example.marketplace.data.repository.ProductRepository;
 import com.example.marketplace.utils.Resource;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 
@@ -35,7 +36,12 @@ public class ProfileViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<ProductEntity>> getFavoriteProducts() {
-        return productRepository.getFavoriteProducts();
+        // Lấy ID của người dùng đang đăng nhập hiện tại
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            return productRepository.getFavoriteProducts(userId);
+        }
+        return null;
     }
 
     public void logout() {

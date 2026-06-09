@@ -10,6 +10,7 @@ import com.example.marketplace.data.local.ProductEntity;
 import com.example.marketplace.data.remote.FirebaseManager;
 import com.example.marketplace.data.repository.ProductRepository;
 import com.example.marketplace.model.User;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class DetailViewModel extends AndroidViewModel {
 
@@ -38,7 +39,12 @@ public class DetailViewModel extends AndroidViewModel {
     }
 
     public LiveData<Boolean> isFavorite(String productId) {
-        return productRepository.isFavorite(productId);
+        // Lấy ID của người dùng đang đăng nhập hiện tại
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            return productRepository.isFavorite(userId, productId);
+        }
+        return null;
     }
 
     public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {

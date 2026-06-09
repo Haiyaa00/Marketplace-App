@@ -13,14 +13,15 @@ public interface FavoriteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertFavorite(FavoriteEntity favorite);
 
-    @Query("DELETE FROM favorites WHERE productId = :productId")
-    void removeFavorite(String productId);
+    @Query("SELECT products.* FROM products INNER JOIN favorites ON products.id = favorites.productId WHERE favorites.userId = :userId ORDER BY products.timestamp DESC")
+    androidx.lifecycle.LiveData<java.util.List<ProductEntity>> getFavoriteProducts(String userId);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE productId = :productId)")
-    LiveData<Boolean> isFavorite(String productId);
+    // Sửa lại câu Query kiểm tra isFavorite
+    @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE userId = :userId AND productId = :productId)")
+    androidx.lifecycle.LiveData<Boolean> isFavorite(String userId, String productId);
 
-    @Query("SELECT products.* FROM products INNER JOIN favorites ON products.id = favorites.productId ORDER BY products.timestamp DESC")
-    LiveData<List<ProductEntity>> getFavoriteProducts();
+    @Query("DELETE FROM favorites WHERE userId = :userId AND productId = :productId")
+    void removeFavorite(String userId, String productId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertFavorites(List<FavoriteEntity> favorites);

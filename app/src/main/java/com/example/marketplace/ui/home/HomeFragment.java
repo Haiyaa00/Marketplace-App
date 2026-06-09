@@ -34,6 +34,8 @@ public class HomeFragment extends Fragment {
 
     private ProductAdapter productAdapter;
     private CategoryAdapter categoryAdapter;
+    private View rootView;
+    private boolean isInitialized = false;
 
     // Biến dùng để quản lý luồng dữ liệu, giúp chuyển đổi mượt mà giữa "Tất cả" và "Tìm kiếm"
     private LiveData<List<ProductEntity>> currentProductsLiveData;
@@ -43,25 +45,32 @@ public class HomeFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        binding = FragmentHomeBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+        //CACHE VIEW: Nếu View chưa tồn tại thì mới tạo
+        if (rootView == null) {
+            binding = FragmentHomeBinding.inflate(inflater, container, false);
+            rootView = binding.getRoot();
+        }
+        return rootView;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
-        setupRecyclerViews();
-        setupSwipeRefresh();
-        setupSearchBar(); // Khởi tạo thanh tìm kiếm
+        //NGĂN CHẶN LOAD LẠI DATA: Chỉ chạy setup 1 lần duy nhất!
+        if (!isInitialized) {
+            viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
-        // Load toàn bộ dữ liệu lần đầu
-        observeData(viewModel.getLocalProducts());
+            setupBanner();
+            setupRecyclerViews();
+            setupSwipeRefresh();
+            setupSearchBar();
 
-        // Gọi load data từ mạng về (Chạy ngầm)
-        triggerRefresh();
-        setupBanner();
+            observeData(viewModel.getLocalProducts());
+            triggerRefresh();
+
+            isInitialized = true; // Đánh dấu là đã setup xong
+        }
     }
 
     private void setupRecyclerViews() {
@@ -233,6 +242,5 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
     }
 }
