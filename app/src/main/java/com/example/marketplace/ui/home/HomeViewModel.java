@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
 import com.example.marketplace.data.local.ProductEntity;
+import com.example.marketplace.data.remote.FirebaseManager;
 import com.example.marketplace.data.repository.ProductRepository;
 import com.example.marketplace.utils.Resource;
 
@@ -18,6 +19,30 @@ public class HomeViewModel extends AndroidViewModel {
 
     // LiveData chứa danh sách sản phẩm lấy từ Room (Local)
     private final LiveData<List<ProductEntity>> localProducts;
+    private androidx.lifecycle.MutableLiveData<List<String>> bannerUrls;
+
+    public LiveData<List<String>> getBannerUrls() {
+        androidx.lifecycle.MutableLiveData<List<String>> liveData = new androidx.lifecycle.MutableLiveData<>();
+
+        FirebaseManager.getInstance().getDb().collection("Banners").get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> urls = new java.util.ArrayList<>();
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        String url = doc.getString("imageUrl");
+                        if (url != null) {
+                            urls.add(url);
+                        }
+                    }
+                    liveData.setValue(urls);
+                })
+                .addOnFailureListener(e -> {
+                    // Nếu lỗi mạng, trả về mảng trống để tránh crash
+                    liveData.setValue(new java.util.ArrayList<>());
+                });
+
+        return liveData;
+    }
+
 
     public HomeViewModel(@NonNull Application application) {
         super(application);

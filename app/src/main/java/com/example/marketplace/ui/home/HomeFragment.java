@@ -1,6 +1,7 @@
 package com.example.marketplace.ui.home;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -61,10 +62,11 @@ public class HomeFragment extends Fragment {
         if (!isInitialized) {
             viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
-            setupBanner();
+            viewModel.getBannerUrls().observe(getViewLifecycleOwner(), this::setupBanner);
             setupRecyclerViews();
             setupSwipeRefresh();
             setupSearchBar();
+            seedLocalBannersToCloud();
 
             observeData(viewModel.getLocalProducts());
             triggerRefresh();
@@ -120,25 +122,25 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void setupBanner() {
-        // 1. Tạo danh sách ảnh Banner (Bạn có thể lấy các link ảnh từ Firebase, ở đây tôi giả lập 3 ảnh)
-        bannerList = new java.util.ArrayList<>();
-        bannerList.add("https://img.freepik.com/premium-vector/online-shopping-concept-with-3d-elements-landing-page_108061-689.jpg");
-        bannerList.add("https://img.freepik.com/free-vector/gradient-sale-background_23-2148906371.jpg");
-        bannerList.add("https://img.freepik.com/free-vector/flat-sale-banner-with-photo_23-2149026968.jpg");
+    private void setupBanner(List<String> banners) {
+        // XÓA BỎ HOÀN TOÀN dòng khai báo "1. Tạo danh sách ảnh Banner" cũ của bạn
 
-        BannerAdapter bannerAdapter = new BannerAdapter(bannerList);
+        // Gán thẳng danh sách nhận được từ ViewModel vào Adapter
+        BannerAdapter bannerAdapter = new BannerAdapter(banners);
         binding.viewPagerBanner.setAdapter(bannerAdapter);
 
-        // Đặt Vị trí bắt đầu ở giữa để có thể vuốt sang trái/phải ngay lập tức
-        binding.viewPagerBanner.setCurrentItem(bannerList.size() * 1000, false);
+        // Đặt Vị trí bắt đầu ở giữa
+        binding.viewPagerBanner.setCurrentItem(banners.size() * 1000, false);
+
+        // Cập nhật lại biến toàn cục bannerList
+        this.bannerList = banners;
 
         setupDotsIndicator();
 
-        // 2. Thêm hiệu ứng lật trang (Zoom Out) mượt mà
+        // 2. Thêm hiệu ứng lật trang (Giữ nguyên)
         binding.viewPagerBanner.setPageTransformer((page, position) -> {
             float r = 1 - Math.abs(position);
-            page.setScaleY(0.85f + r * 0.15f); // Hiệu ứng thu nhỏ ảnh hai bên
+            page.setScaleY(0.85f + r * 0.15f);
         });
 
         binding.viewPagerBanner.registerOnPageChangeCallback(new androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
@@ -146,10 +148,8 @@ public class HomeFragment extends Fragment {
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 updateDots(position % bannerList.size());
-
-                // Reset lại bộ đếm thời gian khi người dùng tự vuốt tay
                 sliderHandler.removeCallbacks(sliderRunnable);
-                sliderHandler.postDelayed(sliderRunnable, 3000); // 3 giây trượt 1 lần
+                sliderHandler.postDelayed(sliderRunnable, 3000);
             }
         });
     }
@@ -162,16 +162,26 @@ public class HomeFragment extends Fragment {
     };
 
     // Tạo các chấm tròn bên dưới
+    private int dpToPx(int dp) {
+        float density = requireContext().getResources().getDisplayMetrics().density;
+        return Math.round((float) dp * density);
+    }
+
+    // Tạo các chấm tròn nhỏ mặc định ban đầu (6dp x 6dp)
     private void setupDotsIndicator() {
+        binding.layoutDots.removeAllViews(); // Dọn dẹp sạch sẽ các chấm cũ trước khi vẽ
         android.widget.ImageView[] dots = new android.widget.ImageView[bannerList.size()];
-        android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(8, 0, 8, 0);
 
         for (int i = 0; i < dots.length; i++) {
             dots[i] = new android.widget.ImageView(requireContext());
-            dots[i].setImageResource(android.R.drawable.presence_invisible); // Dấu chấm xám
+
+            // Đặt kích thước mặc định hình tròn nhỏ 6dp x 6dp
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                    dpToPx(6), dpToPx(6));
+            params.setMargins(dpToPx(4), 0, dpToPx(4), 0); // Khoảng cách giữa các chấm là 4dp
+
             dots[i].setLayoutParams(params);
+            dots[i].setImageResource(R.drawable.dot_inactive); // Chấm xám mặc định
             binding.layoutDots.addView(dots[i]);
         }
     }
@@ -181,13 +191,23 @@ public class HomeFragment extends Fragment {
         int childCount = binding.layoutDots.getChildCount();
         for (int i = 0; i < childCount; i++) {
             android.widget.ImageView imageView = (android.widget.ImageView) binding.layoutDots.getChildAt(i);
+            android.widget.LinearLayout.LayoutParams params = (android.widget.LinearLayout.LayoutParams) imageView.getLayoutParams();
+
             if (i == currentPosition) {
-                imageView.setImageResource(android.R.drawable.presence_online); // Dấu chấm sáng (Xanh/Trắng)
+                // Chấm đang chọn: Chuyển sang màu xanh đại dương và kéo dài ra 16dp tạo hình viên thuốc
+                imageView.setImageResource(R.drawable.dot_active);
+                params.width = dpToPx(16);
+                params.height = dpToPx(6);
             } else {
-                imageView.setImageResource(android.R.drawable.presence_invisible); // Dấu chấm xám
+                // Chấm không chọn: Thu nhỏ lại thành hình tròn xám 6dp x 6dp
+                imageView.setImageResource(R.drawable.dot_inactive);
+                params.width = dpToPx(6);
+                params.height = dpToPx(6);
             }
+            imageView.setLayoutParams(params); // Nạp lại cấu hình kích thước mới
         }
     }
+
 
     @Override
     public void onPause() {
@@ -237,6 +257,58 @@ public class HomeFragment extends Fragment {
                     break;
             }
         });
+    }
+
+    private void seedLocalBannersToCloud() {
+        String[] localBanners = {"banner1.png", "banner2.png", "banner3.png"};
+
+        for (int i = 0; i < localBanners.length; i++) {
+            String fileName = localBanners[i];
+            final int index = i; // Lưu lại vị trí để tạo ID cứng
+
+            try {
+                // 1. Đọc file từ thư mục assets của APK
+                java.io.InputStream is = requireContext().getAssets().open(fileName);
+                java.io.File tempFile = new java.io.File(requireContext().getCacheDir(), fileName);
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+
+                byte[] buffer = new byte[1024];
+                int read;
+                while ((read = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, read);
+                }
+                is.close();
+                fos.flush();
+                fos.close();
+
+                Uri imageUri = Uri.fromFile(tempFile);
+
+                // 2. Đẩy lên Cloudinary
+                com.example.marketplace.data.remote.CloudinaryManager.getInstance()
+                        .uploadImage(requireContext(), imageUri)
+                        .addOnSuccessListener(imageUrl -> {
+
+                            java.util.Map<String, Object> bannerData = new java.util.HashMap<>();
+                            bannerData.put("imageUrl", imageUrl);
+
+                            // GIẢI PHÁP CHỐNG TRÙNG LẶP TUYỆT ĐỐI:
+                            // Gán cứng ID cho Document (Ví dụ: banner_1, banner_2, banner_3)
+                            String documentId = "banner_" + (index + 1);
+
+                            // Dùng .document(id).set() thay vì .add() để luôn GHI ĐÈ, không sinh rác [1]
+                            com.example.marketplace.data.remote.FirebaseManager.getInstance().getDb()
+                                    .collection("Banners")
+                                    .document(documentId) // Đặt ID cố định [1]
+                                    .set(bannerData) // Ghi đè dữ liệu cũ [1]
+                                    .addOnSuccessListener(aVoid -> {
+                                        android.util.Log.d("BannerSeeder", "Đã nạp/ghi đè thành công: " + documentId);
+                                    });
+                        });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

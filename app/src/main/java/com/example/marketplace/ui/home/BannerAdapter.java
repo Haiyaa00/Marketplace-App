@@ -27,7 +27,10 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
 
     @Override
     public void onBindViewHolder(@NonNull BannerViewHolder holder, int position) {
-        // MA THUẬT VÒNG LẶP: Dùng phép chia lấy dư để vị trí dù lên đến hàng ngàn vẫn map đúng mảng
+        // PHÒNG THỦ: Tránh lỗi chia cho 0 (ArithmeticException) gây sập app nếu mảng rỗng
+        if (bannerUrls == null || bannerUrls.isEmpty()) return;
+
+        // Dùng phép chia lấy dư để vị trí dù lên đến hàng ngàn vẫn map đúng mảng [1]
         int realPosition = position % bannerUrls.size();
 
         Glide.with(holder.imageView.getContext())
@@ -39,11 +42,13 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
     @Override
     public int getItemCount() {
         // Trả về số cực lớn để vuốt vô tận
-        return bannerUrls.isEmpty() ? 0 : Integer.MAX_VALUE;
+        return (bannerUrls == null || bannerUrls.isEmpty()) ? 0 : Integer.MAX_VALUE;
     }
 
     static class BannerViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
+        // Dùng từ khóa 'final' để tối ưu hóa bộ nhớ và giữ tính bất biến
+        final ImageView imageView;
+
         public BannerViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.ivBannerImage);
