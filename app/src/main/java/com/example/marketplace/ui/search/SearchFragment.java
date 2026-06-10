@@ -111,7 +111,7 @@ public class SearchFragment extends Fragment {
         });
     }
 
-    // MA THUẬT LỌC & SẮP XẾP
+    //LỌC & SẮP XẾP
     private void performSearch() {
         if (searchLiveData != null) {
             searchLiveData.removeObservers(getViewLifecycleOwner());

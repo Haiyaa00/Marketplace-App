@@ -60,15 +60,18 @@ public class RegisterActivity extends AppCompatActivity {
         if (name.isEmpty()) { binding.tilName.setError("Vui lòng nhập họ tên"); return; }
         if (phone.isEmpty() || phone.length() < 9) { binding.tilPhone.setError("Vui lòng nhập SĐT hợp lệ"); return; }
         if (!ValidatorUtils.isValidEduEmail(email)) {
-            binding.tilEmail.setError("Vui lòng sử dụng email sinh viên (@kientruchanoi.edu.vn)");
+            binding.tilEmail.setError("Vui lòng sử dụng email sinh viên hoặc mã sinh viên trường HAU");
             return; }
+
+        String finalEmail = ValidatorUtils.formatToEduEmail(email);
+
         if (password.length() < 6) { binding.tilPassword.setError("Mật khẩu phải từ 6 ký tự trở lên"); return; }
         if (!password.equals(confirmPassword)) { binding.tilConfirmPassword.setError("Mật khẩu xác nhận không khớp"); return; }
 
         User newUser = new User();
         newUser.setName(name);
         newUser.setPhone(phone);
-        newUser.setEmail(email);
+        newUser.setEmail(finalEmail);
         newUser.setAvatarUrl("");
 
         viewModel.register(newUser, password).observe(this, resource -> {
@@ -78,7 +81,7 @@ public class RegisterActivity extends AppCompatActivity {
                     break;
                 case SUCCESS:
                     showLoading(false);
-                    showDynamicVerificationDialog(email);
+                    showDynamicVerificationDialog(finalEmail);
                     break;
                 case ERROR:
                     showLoading(false);
@@ -133,7 +136,6 @@ public class RegisterActivity extends AppCompatActivity {
         verificationDialog.show();
         startPolling();
     }
-
     private void startPolling() {
         pollingRunnable = new Runnable() {
             @Override

@@ -37,7 +37,6 @@ public class ProductRepository {
         this.favoriteDao = db.favoriteDao();
     }
 
-    // ================== OFFLINE-FIRST READ ==================
 
     public LiveData<List<ProductEntity>> getAllProductsLocally() {
         return productDao.getAllProducts();

@@ -66,9 +66,11 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (!ValidatorUtils.isValidEduEmail(email)) {
-            binding.tilEmail.setError("Chỉ chấp nhận email sinh viên @kientruchanoi.edu.vn");
+            binding.tilEmail.setError("Chỉ chấp nhận email hoặc mã sinh viên trường HAU");
             return;
         }
+
+        String finalEmail = ValidatorUtils.formatToEduEmail(email);
 
         if (password.isEmpty() || password.length() < 6) {
             binding.tilPassword.setError("Mật khẩu phải có ít nhất 6 ký tự");
@@ -76,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         showLoading(true);
-        viewModel.login(email, password).observe(this, resource -> {
+        viewModel.login(finalEmail, password).observe(this, resource -> {
             switch (resource.status) {
                 case LOADING:
                     break;
