@@ -1,5 +1,6 @@
 package com.example.marketplace.ui.post;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
@@ -15,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -46,6 +48,12 @@ public class PostFragment extends Fragment {
     // Adapter cho Tab Quản lý bài đăng
     private ManagePostAdapter managePostAdapter;
 
+    // ==========================================
+    // BIẾN CACHE VIEW (CHỐNG LOAD LẠI) [1]
+    // ==========================================
+    private View rootView;
+    private boolean isInitialized = false;
+
     // Bộ chọn nhiều ảnh từ Gallery
     private final ActivityResultLauncher<String> pickMultipleImagesLauncher =
             registerForActivityResult(new ActivityResultContracts.GetMultipleContents(), uris -> {
@@ -66,22 +74,32 @@ public class PostFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentPostBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+        // CACHE VIEW: Nếu giao diện chưa được tạo thì mới inflate [1]
+        if (rootView == null) {
+            binding = FragmentPostBinding.inflate(inflater, container, false);
+            rootView = binding.getRoot();
+        }
+        return rootView;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
-        setupDropdownMenu();
-        setupAddressDropdowns();
-        setupImageRecyclerView();
-        observeCurrentUser();
-        setupListeners();
-        setupTabLayout();
-        setupManagePostsRecyclerView();
+        // Chỉ setup toàn bộ cấu hình 1 lần duy nhất lúc khởi tạo [1]
+        if (!isInitialized) {
+            viewModel = new ViewModelProvider(this).get(PostViewModel.class);
+
+            setupDropdownMenu();
+            setupAddressDropdowns();
+            setupImageRecyclerView();
+            observeCurrentUser();
+            setupListeners();
+            setupTabLayout();
+            setupManagePostsRecyclerView();
+
+            isInitialized = true; // Đánh dấu đã khởi tạo thành công [1]
+        }
     }
 
     private void setupAddressDropdowns() {
@@ -108,13 +126,25 @@ public class PostFragment extends Fragment {
             if (user != null && binding.edtContactPhone.getText().toString().isEmpty()) {
                 binding.edtContactPhone.setText(user.phone);
             }
+            if (user != null) {
+                // Chỉ lắng nghe sản phẩm cá nhân đúng 1 lần duy nhất tại đây [1]
+                observeMyProducts(user.uid);
+            }
+        });
+    }
+
+    private void observeMyProducts(String userId) {
+        viewModel.getMyProducts(userId).observe(getViewLifecycleOwner(), products -> {
+            if (products != null) {
+                managePostAdapter.submitList(products);
+            }
         });
     }
 
     private void setupDropdownMenu() {
         // Lấy danh sách tự động từ Nguồn chân lý duy nhất (Single Source of Truth)
         String[] categories = com.example.marketplace.utils.CategoryHelper.getCategoryNames();
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         binding.actCategory.setAdapter(adapter);
     }
 
@@ -139,7 +169,7 @@ public class PostFragment extends Fragment {
     private void setupListeners() {
         binding.btnPost.setOnClickListener(v -> attemptPostProduct());
 
-        // Định dạng giá tiền tự động khi nhập (VD: 1.000.000)
+        // Định dạng giá tiền tự động khi nhập
         binding.edtPrice.addTextChangedListener(new TextWatcher() {
             private String current = "";
 
@@ -151,18 +181,16 @@ public class PostFragment extends Fragment {
                 if (!s.toString().equals(current)) {
                     binding.edtPrice.removeTextChangedListener(this);
 
-                    // Loại bỏ tất cả ký tự không phải số
                     String cleanString = s.toString().replaceAll("[^\\d]", "");
 
                     if (!cleanString.isEmpty()) {
                         try {
                             double parsed = Double.parseDouble(cleanString);
-                            
-                            // Sử dụng dấu "." làm dấu phân cách hàng nghìn theo chuẩn Việt Nam
+
                             DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
                             symbols.setGroupingSeparator('.');
                             DecimalFormat formatter = new DecimalFormat("#,###", symbols);
-                            
+
                             String formatted = formatter.format(parsed);
 
                             current = formatted;
@@ -203,10 +231,8 @@ public class PostFragment extends Fragment {
             return;
         }
 
-        // Tạo 1 string địa chỉ hoàn chỉnh
         String fullAddress = street + ", " + ward + ", " + district + ", " + city;
 
-        // Bắt lỗi Validation
         if (selectedUris.isEmpty()) {
             Toast.makeText(requireContext(), "Vui lòng chọn ít nhất 1 ảnh!", Toast.LENGTH_SHORT).show();
             return;
@@ -222,14 +248,12 @@ public class PostFragment extends Fragment {
             binding.tilContactPhone.setError(null);
         }
 
-        // Loại bỏ dấu phân cách (dấu chấm) trước khi parse sang double
+        // Loại bỏ dấu phân cách trước khi parse
         double price = Double.parseDouble(priceStr.replaceAll("[^\\d]", ""));
         showLoading(true);
 
-        // Upload ảnh lên mạng trước (Do màn này giờ chỉ là màn TẠO MỚI)
         viewModel.uploadMultipleImagesToCloud(requireContext(), selectedUris).observe(getViewLifecycleOwner(), resource -> {
             if (resource.status == Resource.Status.SUCCESS) {
-                // Thứ tự tham số chuẩn: Tên, Giá, Danh mục, Mô tả, SĐT, Địa chỉ, Danh sách link ảnh
                 saveProductToDatabase(title, price, category, description, contactPhone, fullAddress, resource.data);
             } else if (resource.status == Resource.Status.ERROR) {
                 showLoading(false);
@@ -243,7 +267,7 @@ public class PostFragment extends Fragment {
 
         Product product = new Product();
         product.setTimestamp(System.currentTimeMillis());
-        product.setViewCount(0); // Lượt xem ban đầu luôn = 0
+        product.setViewCount(0);
         product.setTitle(title);
         product.setPrice(price);
         product.setCategory(category);
@@ -253,7 +277,6 @@ public class PostFragment extends Fragment {
         product.setAddress(address);
         product.setImageUrls(imageUrls);
 
-        // Set ảnh đầu tiên làm ảnh đại diện phụ (cho các class cũ chưa kịp migrate sang imageUrls)
         if (imageUrls != null && !imageUrls.isEmpty()) {
             product.setImageUrl(imageUrls.get(0));
         }
@@ -264,7 +287,6 @@ public class PostFragment extends Fragment {
                     showLoading(false);
                     Toast.makeText(requireContext(), "Đăng bài thành công!", Toast.LENGTH_SHORT).show();
                     resetForm();
-                    // Đẩy về Trang chủ
                     Navigation.findNavController(requireView()).navigate(R.id.nav_home);
                     break;
 
@@ -280,16 +302,12 @@ public class PostFragment extends Fragment {
         binding.tabLayout.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                if (tab.getPosition() == 0) { // Tab Đăng Bán
+                if (tab.getPosition() == 0) {
                     binding.layoutCreatePost.setVisibility(View.VISIBLE);
                     binding.layoutManagePosts.setVisibility(View.GONE);
-                } else { // Tab Quản Lý
+                } else {
                     binding.layoutCreatePost.setVisibility(View.GONE);
                     binding.layoutManagePosts.setVisibility(View.VISIBLE);
-                    // Load danh sách bài đăng của User
-                    if (mCurrentUser != null) {
-                        loadMyPosts();
-                    }
                 }
             }
             @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
@@ -301,8 +319,7 @@ public class PostFragment extends Fragment {
         managePostAdapter = new ManagePostAdapter(new ManagePostAdapter.OnPostActionListener() {
             @Override
             public void onEdit(ProductEntity product) {
-                // MỞ MÀN HÌNH EDIT RIÊNG BIỆT
-                android.content.Intent intent = new android.content.Intent(requireContext(), EditPostActivity.class);
+                Intent intent = new Intent(requireContext(), EditPostActivity.class);
                 intent.putExtra("PRODUCT_ID", product.id);
                 startActivity(intent);
             }
@@ -313,22 +330,14 @@ public class PostFragment extends Fragment {
             }
             @Override
             public void onDetailClick(ProductEntity product) {
-                android.content.Intent intent = new android.content.Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
+                Intent intent = new Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
                 intent.putExtra("PRODUCT_ID", product.id);
                 startActivity(intent);
             }
         });
 
-        binding.rvMyPosts.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext()));
+        binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvMyPosts.setAdapter(managePostAdapter);
-    }
-
-    private void loadMyPosts() {
-        viewModel.getMyProducts(mCurrentUser.uid).observe(getViewLifecycleOwner(), products -> {
-            if (products != null) {
-                managePostAdapter.submitList(products);
-            }
-        });
     }
 
     private void showLoading(boolean isLoading) {
@@ -345,6 +354,7 @@ public class PostFragment extends Fragment {
         }
     }
 
+    // Hàm reset form chi tiết [2]
     private void resetForm() {
         binding.edtTitle.setText("");
         binding.edtPrice.setText("");
@@ -379,6 +389,5 @@ public class PostFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
     }
 }

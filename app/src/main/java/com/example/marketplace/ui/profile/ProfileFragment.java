@@ -34,7 +34,10 @@ public class ProfileFragment extends Fragment {
     private ProductAdapter myProductAdapter;
     private UserEntity mCurrentUser;
 
-    // Bộ chọn ảnh từ Gallery
+    // BIẾN CACHE VIEW (CHỐNG LOAD LẠI) [1]
+    private View rootView;
+    private boolean isInitialized = false;
+
     private final ActivityResultLauncher<String> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -42,38 +45,43 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
-    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentProfileBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+        // CACHE VIEW: Trả về rootView cũ nếu đã được tạo [1]
+        if (rootView == null) {
+            binding = FragmentProfileBinding.inflate(inflater, container, false);
+            rootView = binding.getRoot();
+        }
+        return rootView;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        // Chỉ chạy setup 1 lần duy nhất [1]
+        if (!isInitialized) {
+            viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
-        setupRecyclerView();
-        observeUserData();
-        setupListeners();
+            setupRecyclerView();
+            observeUserData();
+            setupListeners();
+
+            isInitialized = true; // Đánh dấu đã setup xong [1]
+        }
     }
 
     private void setupRecyclerView() {
-        // Truyền false để ẨN icon thùng rác (Vì đây là danh sách yêu thích)
         myProductAdapter = new ProductAdapter(false);
         binding.rvMyProducts.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         binding.rvMyProducts.setAdapter(myProductAdapter);
 
-        // BẤM VÀO SẢN PHẨM YÊU THÍCH -> SANG MÀN DETAIL
         myProductAdapter.setOnProductClickListener(product -> {
             Intent intent = new Intent(requireContext(), com.example.marketplace.ui.detail.ProductDetailActivity.class);
             intent.putExtra("PRODUCT_ID", product.id);
             startActivity(intent);
         });
     }
-
 
     private void observeUserData() {
         viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
@@ -113,30 +121,24 @@ public class ProfileFragment extends Fragment {
                 Toast.makeText(requireContext(), "Mọi phản hồi xin gửi về email hỗ trợ của trường!", Toast.LENGTH_LONG).show()
         );
 
-        // HÀNH VI 1: CLICK VÀO NÚT CAMERA NHỎ ĐỂ THAY ẢNH MỚI [1]
         binding.btnChangeAvatar.setOnClickListener(v -> {
             if (mCurrentUser != null) {
                 pickImageLauncher.launch("image/*");
             }
         });
 
-        // HÀNH VI 2: CLICK VÀO ẢNH ĐẠI DIỆN CHÍNH ĐỂ PHÓNG TO XEM ẢNH [1]
         binding.imgAvatar.setOnClickListener(v -> {
             if (mCurrentUser != null) {
                 showAvatarViewerDialog();
             }
         });
-
     }
 
-    // ================= CHỨC NĂNG XEM ẢNH ĐẠI DIỆN PHÓNG TO =================
     private void showAvatarViewerDialog() {
-        // Tạo nhanh một ImageView động bên trong Dialog
         ImageView imageView = new ImageView(requireContext());
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         imageView.setPadding(16, 16, 16, 16);
 
-        // Load ảnh to bằng Glide
         Glide.with(this)
                 .load(mCurrentUser.avatarUrl != null && !mCurrentUser.avatarUrl.isEmpty() ? mCurrentUser.avatarUrl : android.R.drawable.sym_def_app_icon)
                 .placeholder(android.R.drawable.sym_def_app_icon)
@@ -148,7 +150,6 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
-    // ================= XỬ LÝ NÉN VÀ TẢI ẢNH ĐẠI DIỆN LÊN CLOUD =================
     private void uploadAndSaveAvatar(Uri selectedImageUri) {
         Uri compressedUri = ImageUtils.compressImage(requireContext(), selectedImageUri);
         Toast.makeText(requireContext(), "Đang tải ảnh đại diện lên...", Toast.LENGTH_SHORT).show();
@@ -231,6 +232,26 @@ public class ProfileFragment extends Fragment {
         dialog.show();
     }
 
+    private void showDeleteProductDialog(ProductEntity product) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Xóa bài đăng")
+                .setMessage("Bạn có chắc chắn muốn xóa sản phẩm:\n\"" + product.title + "\"?\nHành động này không thể hoàn tác.")
+                .setPositiveButton("Xóa bài", (dialog, which) -> {
+                    viewModel.deleteProduct(product.id).observe(getViewLifecycleOwner(), resource -> {
+                        switch (resource.status) {
+                            case SUCCESS:
+                                Toast.makeText(requireContext(), "Đã xóa bài đăng thành công!", Toast.LENGTH_SHORT).show();
+                                break;
+                            case ERROR:
+                                Toast.makeText(requireContext(), "Lỗi khi xóa: " + resource.message, Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                    });
+                })
+                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
     private void showLogoutConfirmDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Đăng xuất")
@@ -251,6 +272,5 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
     }
 }
