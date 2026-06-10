@@ -147,8 +147,11 @@ public class FirebaseManager {
     }
 
     // Lấy Collection Reference để gắn Listener lắng nghe tin nhắn mới
-    public com.google.firebase.firestore.CollectionReference getMessagesReference(String chatRoomId) {
-        return db.collection("ChatRooms").document(chatRoomId).collection("Messages");
+    public com.google.firebase.firestore.Query getMessagesQuery(String chatRoomId) {
+        return db.collection("ChatRooms").document(chatRoomId)
+                .collection("Messages")
+                .orderBy("timestamp") // Sắp xếp theo thời gian
+                .limitToLast(20);     // CHỈ LẤY TỐI ĐA 20 TIN NHẮN MỚI NHẤT
     }
 
     public com.google.android.gms.tasks.Task<Void> addFavorite(String userId, String productId) {

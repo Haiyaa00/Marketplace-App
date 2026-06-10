@@ -153,21 +153,23 @@ public class ChatActivity extends AppCompatActivity {
 
     // ================= LẮNG NGHE REALTIME =================
     private void listenForMessages() {
-        firebaseManager.getMessagesReference(chatRoomId).orderBy("timestamp").addSnapshotListener((snapshots, e) -> {
-            if (e != null || snapshots == null) return;
-            for (DocumentChange dc : snapshots.getDocumentChanges()) {
-                if (dc.getType() == DocumentChange.Type.ADDED) {
-                    Message message = dc.getDocument().toObject(Message.class);
-                    messageList.add(message);
-                    adapter.notifyItemInserted(messageList.size() - 1);
-                    binding.rvMessages.smoothScrollToPosition(messageList.size() - 1);
+        // Thay vì gọi getMessagesReference().orderBy(), ta gọi thẳng getMessagesQuery() đã có giới hạn 20
+        firebaseManager.getMessagesQuery(chatRoomId)
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
+                    for (com.google.firebase.firestore.DocumentChange dc : snapshots.getDocumentChanges()) {
+                        if (dc.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
+                            Message message = dc.getDocument().toObject(Message.class);
+                            messageList.add(message);
+                            adapter.notifyItemInserted(messageList.size() - 1);
+                            binding.rvMessages.smoothScrollToPosition(messageList.size() - 1);
 
-                    if (!message.getSenderId().equals(currentUserId)) {
-                        firebaseManager.markChatAsRead(chatRoomId);
+                            if (!message.getSenderId().equals(currentUserId)) {
+                                firebaseManager.markChatAsRead(chatRoomId);
+                            }
+                        }
                     }
-                }
-            }
-        });
+                });
     }
 
     @Override
