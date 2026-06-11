@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light_blue"> <!-- Đổi sang nền xanh xám nhạt -->
+    android:background="@color/bg_light_blue">
 
     <!-- Thanh AppBar (Header) -->
     <com.google.android.material.appbar.AppBarLayout
@@ -22,7 +22,7 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp">
 
-            <!-- Lời chào (Tùy chọn, làm app thân thiện hơn) -->
+            <!-- Lời chào -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -63,7 +63,7 @@
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Kéo xuống để Refresh (Yêu cầu quan trọng trong Spec) -->
+    <!-- Kéo xuống để Refresh -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
@@ -129,11 +129,65 @@
                     android:layout_marginTop="12dp"
                     android:clipToPadding="false"
                     android:paddingHorizontal="12dp"
-                    android:paddingBottom="80dp"
+                    android:paddingBottom="0dp"
                     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                     app:spanCount="2"
                     tools:listitem="@layout/item_product" />
-                <!-- paddingBottom 80dp để list không bị che bởi Bottom Navigation sau này -->
+
+                <!-- THANH CHUYỂN TRANG CAO CẤP DẠNG "KÉN NHỘNG" (ĐÃ NÂNG CẤP) [1] -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/layoutPagination"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="3dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#EAEAEA"
+                    app:cardBackgroundColor="#FFFFFF">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="6dp">
+
+                        <ImageView
+                            android:id="@+id/btnPrevPage"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@android:drawable/ic_media_previous"
+                            app:tint="@color/ocean_blue_primary"
+                            android:clickable="true"
+                            android:focusable="true"/>
+
+                        <TextView
+                            android:id="@+id/tvCurrentPage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="12dp"
+                            android:text="1"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/btnNextPage"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@android:drawable/ic_media_next"
+                            app:tint="@color/ocean_blue_primary"
+                            android:clickable="true"
+                            android:focusable="true"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

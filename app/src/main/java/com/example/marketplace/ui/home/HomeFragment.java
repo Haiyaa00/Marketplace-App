@@ -44,6 +44,9 @@ public class HomeFragment extends Fragment {
     private android.os.Handler sliderHandler = new android.os.Handler();
     private List<String> bannerList;
 
+    private int currentPage = 1;
+    private static final int PAGE_SIZE = 20;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         //CACHE VIEW: Nếu View chưa tồn tại thì mới tạo
@@ -68,7 +71,7 @@ public class HomeFragment extends Fragment {
             setupSearchBar();
             seedLocalBannersToCloud();
 
-            observeData(viewModel.getLocalProducts());
+            loadPage(1);
             triggerRefresh();
 
             isInitialized = true; // Đánh dấu là đã setup xong
@@ -239,6 +242,18 @@ public class HomeFragment extends Fragment {
     private void setupSwipeRefresh() {
         binding.swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright, android.R.color.holo_blue_dark);
         binding.swipeRefreshLayout.setOnRefreshListener(this::triggerRefresh);
+
+        binding.btnPrevPage.setOnClickListener(v -> {
+            if (currentPage > 1) {
+                loadPage(currentPage - 1);
+                binding.rvProducts.smoothScrollToPosition(0); // Cuộn lên đầu sau khi đổi trang
+            }
+        });
+
+        binding.btnNextPage.setOnClickListener(v -> {
+            loadPage(currentPage + 1);
+            binding.rvProducts.smoothScrollToPosition(0);
+        });
     }
 
     private void triggerRefresh() {
@@ -309,6 +324,32 @@ public class HomeFragment extends Fragment {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void loadPage(int page) {
+        currentPage = page;
+        binding.tvCurrentPage.setText(String.valueOf(currentPage));
+
+        // Hủy lắng nghe luồng dữ liệu của trang cũ để tránh xung đột
+        if (currentProductsLiveData != null) {
+            currentProductsLiveData.removeObservers(getViewLifecycleOwner());
+        }
+
+        // Kéo dữ liệu trang mới từ SQLite về
+        currentProductsLiveData = viewModel.getProductsPaginated(currentPage, PAGE_SIZE);
+        currentProductsLiveData.observe(getViewLifecycleOwner(), products -> {
+            if (products != null) {
+                productAdapter.submitList(products);
+
+                // Khóa nút "Trước" nếu đang ở trang 1
+                binding.btnPrevPage.setEnabled(currentPage > 1);
+                binding.btnPrevPage.setAlpha(currentPage > 1 ? 1.0f : 0.3f);
+
+                // Khóa nút "Sau" nếu trang hiện tại tải về có số sản phẩm ít hơn 20 (nghĩa là đã hết đồ)
+                binding.btnNextPage.setEnabled(products.size() == PAGE_SIZE);
+                binding.btnNextPage.setAlpha(products.size() == PAGE_SIZE ? 1.0f : 0.3f);
+            }
+        });
     }
 
     @Override

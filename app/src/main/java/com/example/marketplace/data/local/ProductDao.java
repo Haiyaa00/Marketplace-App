@@ -41,4 +41,12 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE (title LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') " +
             "AND (:category = '' OR category = :category) ORDER BY timestamp DESC")
     LiveData<List<ProductEntity>> searchAndFilterProducts(String searchQuery, String category);
+
+    // 1. Lấy sản phẩm trang chủ phân trang (Sử dụng LIMIT và OFFSET) [1]
+    @Query("SELECT * FROM products ORDER BY timestamp DESC LIMIT :pageSize OFFSET :pageOffset")
+    LiveData<List<ProductEntity>> getProductsPaginated(int pageSize, int pageOffset);
+
+    @Query("SELECT * FROM products WHERE (title LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') " +
+            "AND (:category = '' OR category = :category) ORDER BY timestamp DESC LIMIT :pageSize OFFSET :pageOffset")
+    LiveData<List<ProductEntity>> searchAndFilterProductsPaginated(String searchQuery, String category, int pageSize, int pageOffset);
 }

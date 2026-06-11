@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,6 +37,12 @@ public class SearchFragment extends Fragment {
     private String currentCategory = "";
     private int currentSortType = 0; // 0: Mới nhất, 1: Giá tăng, 2: Giá giảm
 
+    // ==========================================
+    // CÁC BIẾN QUẢN LÝ PHÂN TRANG (MỚI)
+    // ==========================================
+    private int currentPage = 1;
+    private static final int PAGE_SIZE = 20;
+
     private LiveData<List<ProductEntity>> searchLiveData;
 
     @Nullable
@@ -55,8 +62,10 @@ public class SearchFragment extends Fragment {
         setupRecyclerView();
         setupSortSpinner();
         setupListeners();
-        performSearch();
         setupCategoryChips();
+
+        // Gọi tìm kiếm lần đầu (Mặc định ở trang 1)
+        performSearch();
     }
 
     private void setupRecyclerView() {
@@ -80,7 +89,8 @@ public class SearchFragment extends Fragment {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 currentSortType = position;
-                performSearch(); // Sắp xếp lại danh sách
+                currentPage = 1; // Reset về trang 1 khi đổi kiểu sắp xếp
+                performSearch();
             }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
@@ -95,6 +105,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {
                 currentQuery = s.toString().trim();
+                currentPage = 1; // Reset về trang 1 khi đổi từ khóa tìm kiếm
                 performSearch();
             }
         });
@@ -107,17 +118,38 @@ public class SearchFragment extends Fragment {
                 Chip chip = group.findViewById(checkedId);
                 currentCategory = chip.getText().toString();
             }
+            currentPage = 1; // Reset về trang 1 khi đổi danh mục lọc
             performSearch();
+        });
+
+        // 3. LẮNG NGHE NÚT CHUYỂN TRANG TRƯỚC (PREV)
+        binding.btnPrevPage.setOnClickListener(v -> {
+            if (currentPage > 1) {
+                currentPage--;
+                performSearch();
+                binding.rvSearchResults.smoothScrollToPosition(0); // Cuộn mượt lên đầu
+            }
+        });
+
+        // 4. LẮNG NGHE NÚT CHUYỂN TRANG SAU (NEXT)
+        binding.btnNextPage.setOnClickListener(v -> {
+            currentPage++;
+            performSearch();
+            binding.rvSearchResults.smoothScrollToPosition(0); // Cuộn mượt lên đầu
         });
     }
 
-    //LỌC & SẮP XẾP
+    // LỌC & SẮP XẾP KẾT HỢP PHÂN TRANG
     private void performSearch() {
+        // Đặt hiển thị số trang hiện tại lên giao diện
+        binding.tvCurrentPage.setText(String.valueOf(currentPage));
+
         if (searchLiveData != null) {
             searchLiveData.removeObservers(getViewLifecycleOwner());
         }
 
-        searchLiveData = viewModel.searchAndFilter(currentQuery, currentCategory);
+        // Gọi ViewModel tìm kiếm kết hợp Phân trang (Truyền thêm currentPage và PAGE_SIZE)
+        searchLiveData = viewModel.searchAndFilter(currentQuery, currentCategory, currentPage, PAGE_SIZE);
         searchLiveData.observe(getViewLifecycleOwner(), products -> {
             if (products != null) {
                 List<ProductEntity> sortedList = new ArrayList<>(products);
@@ -127,20 +159,29 @@ public class SearchFragment extends Fragment {
                     Collections.sort(sortedList, (p1, p2) -> Double.compare(p1.price, p2.price));
                 } else if (currentSortType == 2) { // Giá giảm
                     Collections.sort(sortedList, (p1, p2) -> Double.compare(p2.price, p1.price));
-                } // currentSortType == 0 (Mới nhất) thì SQL đã sắp xếp sẵn theo timestamp DESC
+                }
 
                 productAdapter.submitList(sortedList);
                 binding.tvResultCount.setText("Có " + sortedList.size() + " kết quả");
+
+                // ==========================================
+                // ĐIỀU KHIỂN TRẠNG THÁI CỦA 2 NÚT CHUYỂN TRANG
+                // ==========================================
+                // Khóa nút "Trước" nếu đang ở trang 1
+                binding.btnPrevPage.setEnabled(currentPage > 1);
+                binding.btnPrevPage.setAlpha(currentPage > 1 ? 1.0f : 0.3f);
+
+                // Khóa nút "Sau" nếu danh sách tải lên ít hơn 20 sản phẩm (nghĩa là trang cuối)
+                binding.btnNextPage.setEnabled(products.size() == PAGE_SIZE);
+                binding.btnNextPage.setAlpha(products.size() == PAGE_SIZE ? 1.0f : 0.3f);
             }
         });
     }
 
     private void setupCategoryChips() {
-        // Lấy danh sách tên từ CategoryHelper
         String[] categories = com.example.marketplace.utils.CategoryHelper.getCategoryNames();
 
         for (String categoryName : categories) {
-            // "Bơm" file mẫu item_chip_category.xml vào ChipGroup
             com.google.android.material.chip.Chip chip = (com.google.android.material.chip.Chip) getLayoutInflater()
                     .inflate(com.example.marketplace.R.layout.item_chip_category, binding.chipGroupCategory, false);
 

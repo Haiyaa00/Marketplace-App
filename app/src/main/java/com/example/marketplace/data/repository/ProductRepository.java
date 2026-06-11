@@ -58,6 +58,18 @@ public class ProductRepository {
         return productDao.searchAndFilterProducts(query, category);
     }
 
+    public LiveData<List<ProductEntity>> getProductsPaginated(int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        // Truyền pageSize trước, offset sau cho khớp với DAO
+        return productDao.getProductsPaginated(pageSize, offset);
+    }
+
+    public LiveData<List<ProductEntity>> searchAndFilterProductsPaginated(String query, String category, int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        // Truyền pageSize trước, offset sau cho khớp với DAO
+        return productDao.searchAndFilterProductsPaginated(query, category, pageSize, offset);
+    }
+
     public void incrementViewCount(String productId) {
         // Tăng view trên Firestore (Bảo mật: Atomic operation)
         firebaseManager.getDb().collection("Products").document(productId)

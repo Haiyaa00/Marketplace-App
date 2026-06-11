@@ -63,4 +63,8 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<ProductEntity>> searchProducts(String query) {
         return repository.searchProductsLocally(query);
     }
+
+    public LiveData<List<ProductEntity>> getProductsPaginated(int page, int pageSize) {
+        return repository.getProductsPaginated(page, pageSize);
+    }
 }

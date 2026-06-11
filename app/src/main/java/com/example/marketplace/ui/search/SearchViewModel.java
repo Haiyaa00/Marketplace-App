@@ -17,7 +17,7 @@ public class SearchViewModel extends AndroidViewModel {
     }
 
     // Truyền Từ khóa và Danh mục. Nếu không có gì, truyền chuỗi rỗng "".
-    public LiveData<List<ProductEntity>> searchAndFilter(String query, String category) {
-        return repository.searchAndFilterProducts(query, category);
+    public LiveData<List<ProductEntity>> searchAndFilter(String query, String category, int page, int pageSize) {
+        return repository.searchAndFilterProductsPaginated(query, category, page, pageSize);
     }
 }
