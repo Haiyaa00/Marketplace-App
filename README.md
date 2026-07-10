@@ -11,22 +11,46 @@
 ---
 
 ## 📸 Giao diện ứng dụng
-*(Phần này dành cho các ảnh chụp màn hình thực tế của bạn)*
 
-<table>
+<table align="center">
   <tr>
-    <td><img src="" width="200" alt="Login Screen"/></td>
-    <td><img src="" width="200" alt="Home Screen"/></td>
-    <td><img src="" width="200" alt="Post Screen"/></td>
-    <td><img src="" width="200" alt="Chat Screen"/></td>
+    <td><img src="screenshots/login.png" width="220"/></td>
+    <td><img src="screenshots/sign_up.png" width="220"/></td>
+    <td><img src="screenshots/forgot_password.png" width="220"/></td>
+    <td><img src="screenshots/home.png" width="220"/></td>
+    <td><img src="screenshots/search.png" width="220"/></td>
+    <td><img src="screenshots/post1.png" width="220"/></td>
+    <td><img src="screenshots/post2.png" width="220"/></td>
+    <td><img src="screenshots/post3.png" width="220"/></td>
+    <td><img src="screenshots/post_manage.png" width="220"/></td>
+    <td><img src="screenshots/edit_post.png" width="220"/></td>
+    <td><img src="screenshots/contact.png" width="220"/></td>
+    <td><img src="screenshots/chat.png" width="220"/></td>
+    <td><img src="screenshots/profile.png" width="220"/></td>
+    <td><img src="screenshots/edit_profile.png" width="220"/></td>
+    <td><img src="screenshots/detail.png" width="220"/></td>
+    <td><img src="screenshots/detail1.png" width="220"/></td>
   </tr>
   <tr>
-    <td align="center">Xác thực sinh viên</td>
-    <td align="center">Trang chủ & Auto-Slider</td>
-    <td align="center">Quản lý tin đa năng</td>
-    <td align="center">Nhắn tin Real-time</td>
+    <td align="center">Màn hình đăng nhập</td>
+    <td align="center">Màn hình đăng ký</td>
+    <td align="center">Quên mật khẩu</td>
+    <td align="center">Trang chủ</td>
+    <td align="center">Trang tìm kiếm</td>
+    <td align="center">Màn hình đăng bài (1)</td>
+    <td align="center">Màn hình đăng bài (2)</td>
+    <td align="center">Màn hình đăng bài (3)</td>
+    <td align="center">Màn hình quản lý bài đăng</td>
+    <td align="center">Chỉnh sửa bài đăng</td>
+    <td align="center">Hộp thư</td>
+    <td align="center">Giao diện nhắn tin</td>
+    <td align="center">Giao diện hồ sơ</td>
+    <td align="center">Chỉnh sưửa hồ sơ</td>
+    <td align="center">Giao diện chi tiết bài đăng (1)</td>
+    <td align="center">Giao diện chi tiết bài đăng (2)</td>
   </tr>
 </table>
+
 
 ---
 
