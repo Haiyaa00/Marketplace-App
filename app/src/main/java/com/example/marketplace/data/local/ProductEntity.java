@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.List;
+
 @Entity(tableName = "products")
 public class ProductEntity {
     @PrimaryKey
@@ -15,18 +17,25 @@ public class ProductEntity {
     public double price;
     public String description;
     public String category;
-    public String imageUrl;
+    public List<String> imageUrls;
     public long timestamp;
+    public String contactPhone;
+    public String address;
+    public int viewCount;
 
     public ProductEntity(@NonNull String id, String sellerId, String title, double price,
-                         String description, String category, String imageUrl, long timestamp) {
+                         String description, String category, List<String> imageUrls, long timestamp,
+                         String contactPhone, String address, int viewCount) {
         this.id = id;
         this.sellerId = sellerId;
         this.title = title;
         this.price = price;
         this.description = description;
         this.category = category;
-        this.imageUrl = imageUrl;
+        this.imageUrls = imageUrls;
         this.timestamp = timestamp;
+        this.contactPhone = contactPhone;
+        this.address = address;
+        this.viewCount = viewCount;
     }
 }

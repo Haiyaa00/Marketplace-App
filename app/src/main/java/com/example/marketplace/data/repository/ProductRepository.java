@@ -5,6 +5,9 @@ import android.app.Application;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.marketplace.data.local.FavoriteDao;
+import com.example.marketplace.data.local.FavoriteEntity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.example.marketplace.data.local.AppDatabase;
 import com.example.marketplace.data.local.ProductDao;
@@ -24,29 +27,58 @@ public class ProductRepository {
     private final FirebaseManager firebaseManager;
     private final ProductDao productDao;
     private final ExecutorService executor;
+    private final FavoriteDao favoriteDao;
 
     public ProductRepository(Application application) {
         this.firebaseManager = FirebaseManager.getInstance();
         AppDatabase db = AppDatabase.getInstance(application);
         this.productDao = db.productDao();
-        this.executor = Executors.newFixedThreadPool(2); // Cấp 2 luồng để xử lý DB nhanh hơn
+        this.executor = Executors.newFixedThreadPool(2);
+        this.favoriteDao = db.favoriteDao();
     }
 
-    // ================== OFFLINE-FIRST READ ==================
 
-    // View (UI) sẽ luôn gọi hàm này để lấy LiveData. Room sẽ tự notify khi có data thay đổi.
     public LiveData<List<ProductEntity>> getAllProductsLocally() {
         return productDao.getAllProducts();
     }
 
     public LiveData<List<ProductEntity>> searchProductsLocally(String query) {
-        // Logic search offline realtime với LIKE
         return productDao.searchProducts(query);
     }
 
+    public LiveData<List<ProductEntity>> getMyProducts(String userId) {
+        return productDao.getMyProducts(userId);
+    }
+
+    public LiveData<ProductEntity> getProductByIdLocally(String productId) {
+        return productDao.getProductById(productId);
+    }
+
+    public LiveData<List<ProductEntity>> searchAndFilterProducts(String query, String category) {
+        return productDao.searchAndFilterProducts(query, category);
+    }
+
+    public LiveData<List<ProductEntity>> getProductsPaginated(int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        // Truyền pageSize trước, offset sau cho khớp với DAO
+        return productDao.getProductsPaginated(pageSize, offset);
+    }
+
+    public LiveData<List<ProductEntity>> searchAndFilterProductsPaginated(String query, String category, int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        // Truyền pageSize trước, offset sau cho khớp với DAO
+        return productDao.searchAndFilterProductsPaginated(query, category, pageSize, offset);
+    }
+
+    public void incrementViewCount(String productId) {
+        // Tăng view trên Firestore (Bảo mật: Atomic operation)
+        firebaseManager.getDb().collection("Products").document(productId)
+                .update("viewCount", com.google.firebase.firestore.FieldValue.increment(1));
+    }
+    // ========================================================
+
     // ================== REMOTE FETCH & SYNC ==================
 
-    // Hàm kéo dữ liệu mới nhất từ Firestore về và lưu đè xuống Room (Pull to Refresh)
     public LiveData<Resource<Void>> refreshProducts() {
         MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
         result.setValue(Resource.loading(null));
@@ -57,16 +89,22 @@ public class ProductRepository {
                 for (DocumentSnapshot doc : task.getResult().getDocuments()) {
                     Product product = doc.toObject(Product.class);
                     if (product != null) {
+                        // Giải pháp chống crash nếu id bị null từ Firestore
+                        if (product.getId() == null || product.getId().isEmpty()) {
+                            product.setId(doc.getId());
+                        }
                         fetchedProducts.add(product);
                     }
                 }
 
-                // Đồng bộ xuống Local (Xóa dữ liệu cũ nếu muốn đảm bảo đồng bộ hoàn toàn, hoặc cứ để REPLACE đè lên)
+                // Đồng bộ xuống local sqlite
                 executor.execute(() -> {
-                    // productDao.clearAllProducts(); // Mở comment dòng này nếu muốn xóa sạch cache cũ mỗi lần refresh
                     productDao.insertProducts(DataMapper.mapToProductEntityList(fetchedProducts));
                     result.postValue(Resource.success(null));
                 });
+
+                syncFavorites();
+
             } else {
                 result.setValue(Resource.error(task.getException() != null ?
                         task.getException().getMessage() : "Failed to fetch products", null));
@@ -78,7 +116,6 @@ public class ProductRepository {
 
     // ================== CREATE PRODUCT ==================
 
-    // Tạo sản phẩm mới (Đẩy lên Firebase -> Xong thì push xuống Local Room ngay lập tức)
     public LiveData<Resource<Void>> createProduct(Product product) {
         MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
         result.setValue(Resource.loading(null));
@@ -95,5 +132,68 @@ public class ProductRepository {
             }
         });
         return result;
+    }
+
+    public LiveData<Resource<Void>> deleteProduct(String productId) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        // 1. Xóa trên Firestore
+        firebaseManager.deleteProduct(productId).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                // 2. Xóa trên SQLite cục bộ
+                executor.execute(() -> {
+                    productDao.deleteProductById(productId);
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Lỗi khi xóa bài đăng!", null));
+            }
+        });
+        return result;
+    }
+
+    public LiveData<List<ProductEntity>> getFavoriteProducts(String userId) {
+        return favoriteDao.getFavoriteProducts(userId);
+    }
+
+    public LiveData<Boolean> isFavorite(String userId, String productId) {
+        return favoriteDao.isFavorite(userId, productId);
+    }
+
+    public void toggleFavorite(String productId, boolean isCurrentlyFavorite) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        executor.execute(() -> {
+            if (isCurrentlyFavorite) {
+                favoriteDao.removeFavorite(userId, productId);
+                firebaseManager.removeFavorite(userId, productId);
+            } else {
+                favoriteDao.insertFavorite(new FavoriteEntity(userId, productId));
+                firebaseManager.addFavorite(userId, productId);
+            }
+        });
+    }
+
+    public void syncFavorites() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        firebaseManager.getUserFavorites(userId).addOnSuccessListener(snapshots -> {
+            List<FavoriteEntity> favList = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                String pId = doc.getString("productId");
+                if (pId != null) {
+                    favList.add(new FavoriteEntity(userId, pId)); // Truyền thêm userId
+                }
+            }
+            executor.execute(() -> {
+                // Tùy chọn: Bạn có thể chỉ xóa favorite của user hiện tại để người khác login không bị tải lại từ đầu
+                favoriteDao.clearFavorites();
+                favoriteDao.insertFavorites(favList);
+            });
+        });
     }
 }

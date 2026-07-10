@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ID ở đây bắt buộc phải TRÙNG KHỚP với ID trong file nav_graph.xml -->
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
         android:title="Trang chủ" />
 
     <item
-        android:id="@+id/nav_cart"
-        android:icon="@drawable/ic_cart"
-        android:title="Giỏ hàng" />
+        android:id="@+id/nav_post"
+        android:icon="@drawable/ic_post"
+        android:title="Đăng bán" />
 
     <item
-        android:id="@+id/nav_orders"
-        android:icon="@drawable/ic_receipt"
-        android:title="Đơn hàng" />
+        android:id="@+id/nav_contact"
+        android:icon="@drawable/ic_contact"
+        android:title="Liên hệ" />
 
     <item
         android:id="@+id/nav_profile"
-        android:icon="@drawable/ic_person"
+        android:icon="@drawable/ic_profile"
         android:title="Cá nhân" />
 </menu>

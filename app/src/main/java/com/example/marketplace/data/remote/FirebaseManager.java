@@ -2,6 +2,7 @@ package com.example.marketplace.data.remote;
 
 import android.net.Uri;
 
+import com.example.marketplace.model.Message;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -57,6 +58,10 @@ public class FirebaseManager {
         return auth.createUserWithEmailAndPassword(email, password);
     }
 
+    public Task<Void> sendPasswordResetEmail(String email) {
+        return auth.sendPasswordResetEmail(email);
+    }
+
     public FirebaseUser getCurrentFirebaseUser() {
         return auth.getCurrentUser();
     }
@@ -104,5 +109,66 @@ public class FirebaseManager {
     // Lấy URL tải xuống sau khi upload thành công
     public Task<Uri> getDownloadUrl(String fileName) {
         return storage.getReference().child("product_images/" + fileName).getDownloadUrl();
+    }
+
+    public Task<Void> deleteProduct(String productId) {
+        return db.collection(COLLECTION_PRODUCTS).document(productId).delete();
+    }
+
+    public com.google.firebase.firestore.FirebaseFirestore getDb() { return db; }
+
+    // Hàm tạo ID phòng chat độc nhất từ 2 UID
+    public String getChatRoomId(String uid1, String uid2) {
+        if (uid1.compareTo(uid2) < 0) {
+            return uid1 + "_" + uid2;
+        } else {
+            return uid2 + "_" + uid1;
+        }
+    }
+
+    // Gửi tin nhắn
+    public com.google.android.gms.tasks.Task<Void> sendMessage(String chatRoomId, String senderId, String receiverId, Message message) {
+        db.collection("ChatRooms").document(chatRoomId)
+                .collection("Messages").document(String.valueOf(message.getTimestamp()))
+                .set(message);
+
+        java.util.List<String> participants = java.util.Arrays.asList(senderId, receiverId);
+
+        // Truyền false vào cuối cho biến "read"
+        com.example.marketplace.model.ChatRoom room = new com.example.marketplace.model.ChatRoom(
+                chatRoomId, participants, message.getText(), message.getTimestamp(), senderId, false
+        );
+        return db.collection("ChatRooms").document(chatRoomId).set(room);
+    }
+
+    // Sửa trong hàm markChatAsRead (Cập nhật đúng trường "read"):
+    public void markChatAsRead(String chatRoomId) {
+        db.collection("ChatRooms").document(chatRoomId).update("read", true);
+    }
+
+    // Lấy Collection Reference để gắn Listener lắng nghe tin nhắn mới
+    public com.google.firebase.firestore.Query getMessagesQuery(String chatRoomId) {
+        return db.collection("ChatRooms").document(chatRoomId)
+                .collection("Messages")
+                .orderBy("timestamp") // Sắp xếp theo thời gian
+                .limitToLast(20);     // CHỈ LẤY TỐI ĐA 20 TIN NHẮN MỚI NHẤT
+    }
+
+    public com.google.android.gms.tasks.Task<Void> addFavorite(String userId, String productId) {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("userId", userId);
+        data.put("productId", productId);
+        // Lưu với ID là "UID_ProductID" để tránh trùng lặp
+        return db.collection("Favorites").document(userId + "_" + productId).set(data);
+    }
+
+    // Xóa 1 sản phẩm khỏi danh sách yêu thích trên Cloud
+    public com.google.android.gms.tasks.Task<Void> removeFavorite(String userId, String productId) {
+        return db.collection("Favorites").document(userId + "_" + productId).delete();
+    }
+
+    // Lấy toàn bộ danh sách yêu thích của 1 User
+    public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> getUserFavorites(String userId) {
+        return db.collection("Favorites").whereEqualTo("userId", userId).get();
     }
 }

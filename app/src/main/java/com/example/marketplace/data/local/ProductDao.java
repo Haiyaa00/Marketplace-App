@@ -30,4 +30,23 @@ public interface ProductDao {
 
     @Query("DELETE FROM products")
     void clearAllProducts();
+
+    @Query("DELETE FROM products WHERE id = :productId")
+    void deleteProductById(String productId);
+
+    @Query("SELECT * FROM products WHERE id = :productId LIMIT 1")
+    LiveData<ProductEntity> getProductById(String productId);
+
+    // Lệnh SQL thông minh: Lọc từ khóa (Tên/Mô tả) VÀ Lọc Danh mục (Nếu category rỗng thì lấy tất cả)
+    @Query("SELECT * FROM products WHERE (title LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') " +
+            "AND (:category = '' OR category = :category) ORDER BY timestamp DESC")
+    LiveData<List<ProductEntity>> searchAndFilterProducts(String searchQuery, String category);
+
+    // 1. Lấy sản phẩm trang chủ phân trang (Sử dụng LIMIT và OFFSET) [1]
+    @Query("SELECT * FROM products ORDER BY timestamp DESC LIMIT :pageSize OFFSET :pageOffset")
+    LiveData<List<ProductEntity>> getProductsPaginated(int pageSize, int pageOffset);
+
+    @Query("SELECT * FROM products WHERE (title LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') " +
+            "AND (:category = '' OR category = :category) ORDER BY timestamp DESC LIMIT :pageSize OFFSET :pageOffset")
+    LiveData<List<ProductEntity>> searchAndFilterProductsPaginated(String searchQuery, String category, int pageSize, int pageOffset);
 }

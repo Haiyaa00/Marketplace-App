@@ -59,14 +59,19 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (name.isEmpty()) { binding.tilName.setError("Vui lòng nhập họ tên"); return; }
         if (phone.isEmpty() || phone.length() < 9) { binding.tilPhone.setError("Vui lòng nhập SĐT hợp lệ"); return; }
-        if (!ValidatorUtils.isValidEduEmail(email)) { binding.tilEmail.setError("Chỉ chấp nhận email @edu.vn"); return; }
+        if (!ValidatorUtils.isValidEduEmail(email)) {
+            binding.tilEmail.setError("Vui lòng sử dụng email sinh viên hoặc mã sinh viên trường HAU");
+            return; }
+
+        String finalEmail = ValidatorUtils.formatToEduEmail(email);
+
         if (password.length() < 6) { binding.tilPassword.setError("Mật khẩu phải từ 6 ký tự trở lên"); return; }
         if (!password.equals(confirmPassword)) { binding.tilConfirmPassword.setError("Mật khẩu xác nhận không khớp"); return; }
 
         User newUser = new User();
         newUser.setName(name);
         newUser.setPhone(phone);
-        newUser.setEmail(email);
+        newUser.setEmail(finalEmail);
         newUser.setAvatarUrl("");
 
         viewModel.register(newUser, password).observe(this, resource -> {
@@ -76,7 +81,7 @@ public class RegisterActivity extends AppCompatActivity {
                     break;
                 case SUCCESS:
                     showLoading(false);
-                    showDynamicVerificationDialog(email);
+                    showDynamicVerificationDialog(finalEmail);
                     break;
                 case ERROR:
                     showLoading(false);
@@ -105,7 +110,7 @@ public class RegisterActivity extends AppCompatActivity {
         dialogBinding = com.example.marketplace.databinding.DialogVerificationBinding.inflate(getLayoutInflater());
 
         // 2. Cập nhật Text email cho thông báo
-        dialogBinding.tvDialogMessage.setText("Một email xác thực đã được gửi tới:\n" + email + "\n\nVui lòng kiểm tra hộp thư đến (hoặc Spam). Màn hình này sẽ tự động chuyển đổi khi bạn hoàn tất...");
+        dialogBinding.tvDialogMessage.setText("Một email xác thực đã được gửi tới email trường:\n" + email + "\n\nVui lòng kiểm tra hộp thư Outlook của bạn. Màn hình này sẽ tự động chuyển đổi khi bạn hoàn tất...");
 
         // 3. Xây dựng Custom Dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert);
@@ -131,7 +136,6 @@ public class RegisterActivity extends AppCompatActivity {
         verificationDialog.show();
         startPolling();
     }
-
     private void startPolling() {
         pollingRunnable = new Runnable() {
             @Override

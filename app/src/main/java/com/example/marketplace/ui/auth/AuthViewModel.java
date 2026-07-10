@@ -27,6 +27,10 @@ public class AuthViewModel extends AndroidViewModel {
         return repository.register(user, password);
     }
 
+    public LiveData<Resource<Void>> sendPasswordResetEmail(String email) {
+        return repository.sendPasswordResetEmail(email);
+    }
+
     public LiveData<Boolean> checkVerificationStatus() {
         return repository.checkEmailVerificationStatus();
     }

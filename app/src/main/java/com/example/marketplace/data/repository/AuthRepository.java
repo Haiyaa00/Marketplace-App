@@ -75,7 +75,6 @@ public class AuthRepository {
                         if (saveTask.isSuccessful()) {
                             fbUser.sendEmailVerification().addOnCompleteListener(emailTask -> {
                                 if (emailTask.isSuccessful()) {
-                                    // ĐÃ BỎ DÒNG FIREBASEMANAGER.LOGOUT() Ở ĐÂY
                                     result.postValue(Resource.success(null));
                                 } else {
                                     result.setValue(Resource.error("Lỗi khi gửi email xác thực!", null));
@@ -93,16 +92,29 @@ public class AuthRepository {
         return result;
     }
 
+    // ================= Hàm Quên Mật Khẩu =================
+    public LiveData<Resource<Void>> sendPasswordResetEmail(String email) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        firebaseManager.sendPasswordResetEmail(email).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                result.setValue(Resource.success(null));
+            } else {
+                result.setValue(Resource.error(task.getException() != null ? task.getException().getMessage() : "Lỗi khi gửi yêu cầu đặt lại mật khẩu", null));
+            }
+        });
+        return result;
+    }
+
     // ================= Helper Method =================
-    // Hàm này giúp kéo dữ liệu từ Firestore và lưu đè vào Room Local
     private void fetchAndCacheUser(String uid, MutableLiveData<Resource<Void>> result) {
         firebaseManager.getUserInfo(uid).addOnSuccessListener(documentSnapshot -> {
             User user = documentSnapshot.toObject(User.class);
             if (user != null) {
-                // Ghi xuống Room trên background thread
                 executor.execute(() -> {
                     userDao.insertUser(DataMapper.mapToUserEntity(user));
-                    result.postValue(Resource.success(null)); // Update UI success
+                    result.postValue(Resource.success(null));
                 });
             } else {
                 result.setValue(Resource.error("Không tìm thấy dữ liệu người dùng trên server!", null));
@@ -115,7 +127,6 @@ public class AuthRepository {
         FirebaseUser currentUser = firebaseManager.getCurrentFirebaseUser();
 
         if (currentUser != null) {
-            // Phải gọi reload() để lấy trạng thái mới nhất từ server Firebase
             currentUser.reload().addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     isVerified.setValue(currentUser.isEmailVerified());
@@ -129,10 +140,48 @@ public class AuthRepository {
         return isVerified;
     }
 
-    // Đăng xuất: Clear Firebase Session và Clear Local Room DB
+    public LiveData<Resource<Void>> updateAvatar(UserEntity currentUser, String newAvatarUrl) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        User updatedUser = new User(currentUser.uid, currentUser.name, currentUser.email, currentUser.phone, newAvatarUrl);
+
+        firebaseManager.saveUserInfo(updatedUser).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                executor.execute(() -> {
+                    userDao.insertUser(DataMapper.mapToUserEntity(updatedUser));
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Lỗi cập nhật ảnh đại diện!", null));
+            }
+        });
+        return result;
+    }
+
+    public LiveData<Resource<Void>> updateProfile(UserEntity currentUser, String newName, String newPhone) {
+        MutableLiveData<Resource<Void>> result = new MutableLiveData<>();
+        result.setValue(Resource.loading(null));
+
+        User updatedUser = new User(currentUser.uid, newName, currentUser.email, newPhone, currentUser.avatarUrl);
+
+        firebaseManager.saveUserInfo(updatedUser).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                executor.execute(() -> {
+                    userDao.insertUser(DataMapper.mapToUserEntity(updatedUser));
+                    result.postValue(Resource.success(null));
+                });
+            } else {
+                result.setValue(Resource.error(task.getException() != null ?
+                        task.getException().getMessage() : "Không thể cập nhật thông tin!", null));
+            }
+        });
+        return result;
+    }
+
     public void logout() {
         firebaseManager.logout();
         executor.execute(userDao::clearUser);
     }
-
 }
