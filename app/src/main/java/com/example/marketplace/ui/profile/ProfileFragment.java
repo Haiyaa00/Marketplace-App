@@ -59,7 +59,7 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Chỉ chạy setup 1 lần duy nhất [1]
+        // Chỉ chạy setup 1 lần duy nhất
         if (!isInitialized) {
             viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
@@ -67,7 +67,7 @@ public class ProfileFragment extends Fragment {
             observeUserData();
             setupListeners();
 
-            isInitialized = true; // Đánh dấu đã setup xong [1]
+            isInitialized = true; // Đánh dấu đã setup xong
         }
     }
 

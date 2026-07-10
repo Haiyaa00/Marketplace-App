@@ -115,19 +115,19 @@ public class HomeFragment extends Fragment {
             public void afterTextChanged(Editable s) {
                 String query = s.toString().trim();
                 if (query.isEmpty()) {
-                    // Nếu ô tìm kiếm trống -> Hiện tất cả sản phẩm
-                    observeData(viewModel.getLocalProducts());
+                    // Nếu trống thì quay về hiển thị theo phân trang thay vì lấy tất cả
+                    loadPage(currentPage);
                 } else {
                     // Nếu có chữ -> Chạy lệnh SQL LIKE qua ViewModel
                     observeData(viewModel.searchProducts(query));
+                    // Ẩn thanh phân trang khi đang tìm kiếm để tránh xung đột
+                    binding.layoutPagination.setVisibility(View.GONE);
                 }
             }
         });
     }
 
     private void setupBanner(List<String> banners) {
-        // XÓA BỎ HOÀN TOÀN dòng khai báo "1. Tạo danh sách ảnh Banner" cũ của bạn
-
         // Gán thẳng danh sách nhận được từ ViewModel vào Adapter
         BannerAdapter bannerAdapter = new BannerAdapter(banners);
         binding.viewPagerBanner.setAdapter(bannerAdapter);
@@ -150,7 +150,9 @@ public class HomeFragment extends Fragment {
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
-                updateDots(position % bannerList.size());
+                if (bannerList != null && !bannerList.isEmpty()) {
+                    updateDots(position % bannerList.size());
+                }
                 sliderHandler.removeCallbacks(sliderRunnable);
                 sliderHandler.postDelayed(sliderRunnable, 3000);
             }
@@ -172,6 +174,7 @@ public class HomeFragment extends Fragment {
 
     // Tạo các chấm tròn nhỏ mặc định ban đầu (6dp x 6dp)
     private void setupDotsIndicator() {
+        if (bannerList == null) return;
         binding.layoutDots.removeAllViews(); // Dọn dẹp sạch sẽ các chấm cũ trước khi vẽ
         android.widget.ImageView[] dots = new android.widget.ImageView[bannerList.size()];
 
@@ -224,7 +227,7 @@ public class HomeFragment extends Fragment {
         sliderHandler.postDelayed(sliderRunnable, 3000); // Bật lại động cơ khi vào lại app
     }
 
-        private void observeData(LiveData<List<ProductEntity>> newLiveData) {
+    private void observeData(LiveData<List<ProductEntity>> newLiveData) {
         // Gỡ bỏ người lắng nghe cũ (để tránh 2 luồng dữ liệu đè nhau gây lag)
         if (currentProductsLiveData != null) {
             currentProductsLiveData.removeObservers(getViewLifecycleOwner());
@@ -264,7 +267,8 @@ public class HomeFragment extends Fragment {
                     break;
                 case SUCCESS:
                     binding.swipeRefreshLayout.setRefreshing(false);
-                    // Không cần làm gì thêm vì Room DB tự động push data mới lên UI qua observeData()
+                    // Sau khi refresh từ server, load lại đúng trang hiện tại để cập nhật UI
+                    loadPage(currentPage);
                     break;
                 case ERROR:
                     binding.swipeRefreshLayout.setRefreshing(false);
@@ -279,10 +283,9 @@ public class HomeFragment extends Fragment {
 
         for (int i = 0; i < localBanners.length; i++) {
             String fileName = localBanners[i];
-            final int index = i; // Lưu lại vị trí để tạo ID cứng
+            final int index = i; 
 
             try {
-                // 1. Đọc file từ thư mục assets của APK
                 java.io.InputStream is = requireContext().getAssets().open(fileName);
                 java.io.File tempFile = new java.io.File(requireContext().getCacheDir(), fileName);
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
@@ -298,7 +301,6 @@ public class HomeFragment extends Fragment {
 
                 Uri imageUri = Uri.fromFile(tempFile);
 
-                // 2. Đẩy lên Cloudinary
                 com.example.marketplace.data.remote.CloudinaryManager.getInstance()
                         .uploadImage(requireContext(), imageUri)
                         .addOnSuccessListener(imageUrl -> {
@@ -306,15 +308,12 @@ public class HomeFragment extends Fragment {
                             java.util.Map<String, Object> bannerData = new java.util.HashMap<>();
                             bannerData.put("imageUrl", imageUrl);
 
-                            // GIẢI PHÁP CHỐNG TRÙNG LẶP TUYỆT ĐỐI:
-                            // Gán cứng ID cho Document (Ví dụ: banner_1, banner_2, banner_3)
                             String documentId = "banner_" + (index + 1);
 
-                            // Dùng .document(id).set() thay vì .add() để luôn GHI ĐÈ, không sinh rác [1]
                             com.example.marketplace.data.remote.FirebaseManager.getInstance().getDb()
                                     .collection("Banners")
-                                    .document(documentId) // Đặt ID cố định [1]
-                                    .set(bannerData) // Ghi đè dữ liệu cũ [1]
+                                    .document(documentId) 
+                                    .set(bannerData) 
                                     .addOnSuccessListener(aVoid -> {
                                         android.util.Log.d("BannerSeeder", "Đã nạp/ghi đè thành công: " + documentId);
                                     });
@@ -329,6 +328,7 @@ public class HomeFragment extends Fragment {
     private void loadPage(int page) {
         currentPage = page;
         binding.tvCurrentPage.setText(String.valueOf(currentPage));
+        binding.layoutPagination.setVisibility(View.VISIBLE); // Hiện lại thanh phân trang
 
         // Hủy lắng nghe luồng dữ liệu của trang cũ để tránh xung đột
         if (currentProductsLiveData != null) {

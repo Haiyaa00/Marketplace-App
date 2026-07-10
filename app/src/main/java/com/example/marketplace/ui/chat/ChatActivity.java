@@ -133,7 +133,7 @@ public class ChatActivity extends AppCompatActivity {
                 if (task.isSuccessful() && task.getResult() != null) {
                     String uploadedImageUrl = task.getResult();
 
-                    // MA THUẬT CHỐNG GHI ĐÈ: Cộng thêm indexOffset vào timestamp
+                    // CHỐNG GHI ĐÈ: Cộng thêm indexOffset vào timestamp
                     // Giúp các bức ảnh dù upload xong cùng 1 miligiây cũng không bị trùng ID trên Firestore
                     long uniqueTimestamp = System.currentTimeMillis() + indexOffset;
 
@@ -153,7 +153,6 @@ public class ChatActivity extends AppCompatActivity {
 
     // ================= LẮNG NGHE REALTIME =================
     private void listenForMessages() {
-        // Thay vì gọi getMessagesReference().orderBy(), ta gọi thẳng getMessagesQuery() đã có giới hạn 20
         firebaseManager.getMessagesQuery(chatRoomId)
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null || snapshots == null) return;
